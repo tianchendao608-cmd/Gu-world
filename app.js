@@ -207,82 +207,42 @@ function renderReview(){ if(!isAdmin()){$('content').innerHTML='<div class="card
 window.review=async(t,id,status)=>{await setDoc(ref(t,id),{status},{merge:true});toast(status==='approved'?'已通过':'已驳回')};
 function renderRules(){ $('content').innerHTML=`<div class="scroll-panel"><h2>V7核心规则</h2><p>同阶只能吸收同阶或低阶蛊虫、杀招、凡蛊屋，不能跨阶吸收。</p><p>跨流派吸收真元×150%，跨流派使用时所有属性效果÷2。</p><p>初始五维皆为5；基础拳击伤害0.25，一秒一拳。</p><p>资质：十绝体100%，甲85%，乙75%，丙60%，丁45%。</p><p>一转青铜真元青翠色，二转赤铁真元赤红色，三转白银真元银色，四转黄金真元金色，五转紫金真元紫金色。</p><p>杀招只能选择一个属性作为招式属性；创建杀招需大师成就，创建凡蛊屋需宗师成就。</p></div>`; }
 
-
-/* ===================== V7.2 稳定增强补丁：详情、装备栏、交易、传音、势力 ===================== */
-state.sects = state.sects || [];
-state.friends = state.friends || [];
-
+/* ===================== V7.2 快捷战斗/装备/交易/传音/势力补丁 ===================== */
+const V72 = { maxEquip:10 };
 function v72DurationText(item){return item?.duration || item?.hold || item?.lasting || item?.time || '-'}
-function v72CooldownText(item){return item?.cooldown || item?.cd || '0'}
+function v72CooldownText(item){return item?.cooldown || item?.cd || '-'}
 function v72RangeText(item){return item?.range || item?.distance || '-'}
-function v72Seconds(v){const m=String(v ?? '').match(/\d+(\.\d+)?/);return m?Math.max(0,Math.ceil(Number(m[0]))):0}
+function v72Seconds(v){
+  if(v===undefined||v===null||v==='') return 0;
+  const s=String(v); const m=s.match(/\d+(\.\d+)?/); return m?Math.max(0,Math.ceil(Number(m[0]))):0;
+}
 function v72TopAttr(type,item,p=me){
-  const attrs=effectAttrs(type,item,p);let best='attack',val=-Infinity;
-  attrKeys.forEach(k=>{if(n(attrs[k])>val){best=k;val=n(attrs[k])}});
+  const attrs=effectAttrs(type,item,p); let best='attack', val=-Infinity;
+  attrKeys.forEach(k=>{if(n(attrs[k])>val){best=k;val=n(attrs[k]);}});
   return `${attrCN[best]}+${Math.max(0,val)}`;
 }
-function v72EquipArray(p=me){const eq=Array.isArray(p?.equipped)?p.equipped.slice(0,10):[];while(eq.length<10)eq.push(null);return eq}
+function v72EquipArray(){
+  const eq = Array.isArray(me?.equipped) ? me.equipped.slice(0,10) : [];
+  while(eq.length<10) eq.push(null);
+  return eq;
+}
 function v72CooldownKey(slot){return `gu_cd_${accountId}_${slot}`}
-function v72CooldownLeft(slot){const end=n(localStorage.getItem(v72CooldownKey(slot)));return Math.max(0,Math.ceil((end-Date.now())/1000))}
-function v72SetCooldown(slot,sec){if(sec>0)localStorage.setItem(v72CooldownKey(slot),String(Date.now()+sec*1000))}
+function v72CooldownLeft(slot){
+  const end=n(localStorage.getItem(v72CooldownKey(slot))); return Math.max(0,Math.ceil((end-Date.now())/1000));
+}
+function v72SetCooldown(slot,sec){ if(sec>0)localStorage.setItem(v72CooldownKey(slot), String(Date.now()+sec*1000)); }
+function v72EquipName(e){return e? itemName(e.type,e.id) : '空';}
 function v72CanEquip(type){return ['guworms','killmoves','guhouses'].includes(type)}
-function v72RestoreAmount(){return Math.max(1,n(me?.restoreStoneAmount || localStorage.getItem('restoreStoneAmount') || 1))}
-function v72EquippedLabel(e){return e?itemName(e.type,e.id):'空'}
-
-const oldSubscribeAllV72 = subscribeAll;
-subscribeAll = function(){
-  if(unsubbed) return;
-  unsubbed=true;
-  ['users','players','guworms','killmoves','guhouses','recipes','materials','trades','sects'].forEach(name=>onSnapshot(col(name),snap=>{
-    state[name]=snap.docs.map(d=>({id:d.id,...d.data()}));
-    if(name==='users') me = state.users.find(u=>u.id===accountId)||null;
-    renderUser();render();
-  }));
-  onSnapshot(query(col('messages'),orderBy('createdAt','asc')),snap=>{state.messages=snap.docs.map(d=>({id:d.id,...d.data()})); if(current==='chat') render();});
-};
-
-const oldRenderVitalsV72 = renderVitals;
-renderVitals = function(){
-  let box=$('vitalsDock'); if(!box){box=document.createElement('div');box.id='vitalsDock';document.body.appendChild(box)}
-  if(!me){box.innerHTML=`<button onclick="window.loginModal()">入世登录</button>`;return}
-  const attrs=computedAttrs(me), hpMax=attrs.life, hp=n(me.hp||hpMax), esMax=maxEssence(me), es=n(me.essence||esMax), rank=realmRank(me.realm);
-  const restoreAmt=v72RestoreAmount();
-  const eq=v72EquipArray();
-  const eqHtml=eq.map((e,i)=>{
-    const left=v72CooldownLeft(i); const item=e?getItem(e.type,e.id):null;
-    const name=e?v72EquippedLabel(e):'空';
-    return `<div class="equip-slot ${e?'filled':''}"><b>${i}</b>${e?img(item?.image):''}<span>${safe(name.slice(0,4))}</span>${e?`<em>${safe(v72TopAttr(e.type,item))}</em><button onclick="window.useEquipped(${i})">${left>0?left+'秒':'使用'}</button><button class="mini" onclick="window.unequipThing(${i})">卸</button>`:''}</div>`;
-  }).join('');
-  box.innerHTML=`<div class="vital-title">${safe(me.name||accountId)}</div><div class="bar-wrap"><span>生命 ${hp}/${hpMax}</span><div class="bar"><i style="width:${Math.min(100,hp/hpMax*100)}%"></i></div></div><div class="bar-wrap"><span>${essenceName[rank]} ${es}/${esMax}</span><div class="bar essence ${essenceClass[rank]}"><i style="width:${Math.min(100,es/esMax*100)}%"></i></div></div><div class="stone-line">元石 ${n(me.stones)} <button onclick="window.restoreEssence()">恢复×${restoreAmt}</button></div>${isAdmin()?`<button onclick="window.setRestoreAmount()">设置恢复数量</button>`:''}<button onclick="window.goBag()">打开乾坤袋</button><div class="equip-title">装备栏 0-9</div><div class="equip-bar">${eqHtml}</div>`;
-};
-
-window.setRestoreAmount = async function(){
-  if(!isAdmin())return toast('只有管理员可设置');
-  const val=prompt('每次点击恢复使用多少元石？',String(v72RestoreAmount()));
-  if(val===null)return; const use=Math.max(1,n(val)||1);
-  localStorage.setItem('restoreStoneAmount',String(use));
-  if(me) await saveMe({restoreStoneAmount:use});
-  toast('恢复数量已设置');renderVitals();
-};
-window.restoreEssence = async function(amount=null){
-  if(!requireLogin())return;
-  const use=Math.max(1,n(amount ?? v72RestoreAmount()));
-  if(n(me.stones)<use)return toast('元石不足');
-  const mx=maxEssence(me); const before=n(me.essence); const es=Math.min(mx,before+use*10);
-  await saveMe({stones:n(me.stones)-use, essence:es});
-  toast(`使用${use}元石，恢复${Math.max(0,es-before)}真元`);
-};
-
 window.equipThing = async function(type,id){
   if(!requireLogin())return; if(!v72CanEquip(type))return toast('该物不能装备');
-  const absorbed=me.absorbed||{}; const inAbsorbed=!!absorbed[type]?.[id];
-  if(!inAbsorbed && !hasInv(type,id))return toast('背包没有该蛊物');
-  const slot=Number(prompt('装备到哪个格子？请输入0-9','0'));
-  if(!Number.isInteger(slot)||slot<0||slot>9)return toast('格子必须是0-9');
+  const absorbed = me.absorbed || {}; const inAbsorbed = !!absorbed[type]?.[id];
+  if(!inAbsorbed && !hasInv(type,id)) return toast('背包没有该蛊物');
+  const slot = Number(prompt('装备到哪个格子？请输入0-9', '0'));
+  if(!Number.isInteger(slot)||slot<0||slot>9) return toast('格子必须是0-9');
   const eq=v72EquipArray(); eq[slot]={type,id};
-  await saveMe({equipped:eq});toast(`已装备到${slot}号位`);renderVitals();
-};
-window.unequipThing = async function(slot){if(!requireLogin())return;const eq=v72EquipArray();eq[slot]=null;await saveMe({equipped:eq});renderVitals();};
+  await saveMe({equipped:eq}); toast(`已装备到${slot}号位`); render();
+}
+window.unequipThing = async function(slot){if(!requireLogin())return; const eq=v72EquipArray(); eq[slot]=null; await saveMe({equipped:eq}); render();}
 window.useEquipped = async function(slot){
   if(!requireLogin())return; const eq=v72EquipArray(); const e=eq[slot]; if(!e)return toast('此格为空');
   const left=v72CooldownLeft(slot); if(left>0)return toast(`冷却中：${left}秒`);
@@ -290,56 +250,184 @@ window.useEquipped = async function(slot){
   const cost=itemUseCost(e.type,item); if(n(me.essence)<cost)return toast('真元不足');
   await saveMe({essence:n(me.essence)-cost});
   const attrs=effectAttrs(e.type,item,me); const txt=attrKeys.filter(k=>attrs[k]).map(k=>`${attrCN[k]}+${attrs[k]}`).join('，')||'无属性加成';
-  fx(`${item.name||e.id}：${txt}`); v72SetCooldown(slot,v72Seconds(v72CooldownText(item))); renderVitals();
-};
+  fx(`${item.name||e.id}：${txt}`);
+  v72SetCooldown(slot,v72Seconds(v72CooldownText(item)));
+  renderVitals();
+}
+window.setRestoreAmount=function(){
+  if(!isAdmin())return toast('只有管理员可设置');
+  const old=localStorage.getItem('restoreStoneAmount')||'1';
+  const val=prompt('每次恢复使用多少元石？',old); if(!val)return;
+  localStorage.setItem('restoreStoneAmount', String(Math.max(1,n(val)||1))); renderVitals();
+}
+window.restoreEssence = async function(amount=null){
+  if(!requireLogin())return;
+  const use = Math.max(1,n(amount ?? localStorage.getItem('restoreStoneAmount') ?? 1));
+  if(n(me.stones)<use)return toast('元石不足');
+  const mx=maxEssence(me); const es=Math.min(mx,n(me.essence)+use*10);
+  await saveMe({stones:n(me.stones)-use, essence:es});
+  toast(`使用${use}元石，恢复${Math.min(use*10, mx-n(me.essence))}真元`);
+}
 
-const oldDetailV72 = detail;
+const oldRenderVitals = renderVitals;
+renderVitals = function(){
+  let box=$('vitalsDock'); if(!box){box=document.createElement('div'); box.id='vitalsDock'; document.body.appendChild(box)}
+  if(!me){box.innerHTML=`<button onclick="window.loginModal()">入世登录</button>`;return}
+  const attrs=computedAttrs(me), hpMax=attrs.life, hp=n(me.hp||hpMax), esMax=maxEssence(me), es=n(me.essence||esMax), rank=realmRank(me.realm);
+  const restoreAmt=Math.max(1,n(localStorage.getItem('restoreStoneAmount')||1));
+  const eq=v72EquipArray();
+  const eqHtml=eq.map((e,i)=>{const left=v72CooldownLeft(i); const item=e?getItem(e.type,e.id):null; return `<div class="equip-slot ${e?'filled':''}" title="${safe(e?itemName(e.type,e.id):'空')}"><b>${i}</b>${e?img(item?.image):''}<span>${safe(e?itemName(e.type,e.id).slice(0,4):'空')}</span>${e?`<em>${safe(v72TopAttr(e.type,item))}</em><button onclick="window.useEquipped(${i})">${left>0?left+'秒':'使用'}</button>`:''}</div>`}).join('');
+  box.innerHTML=`<div class="vital-title">${safe(me.name||accountId)}</div><div class="bar-wrap"><span>生命 ${hp}/${hpMax}</span><div class="bar"><i style="width:${Math.min(100,hp/hpMax*100)}%"></i></div></div><div class="bar-wrap"><span>${essenceName[rank]} ${es}/${esMax}</span><div class="bar essence ${essenceClass[rank]}"><i style="width:${Math.min(100,es/esMax*100)}%"></i></div></div><div class="stone-line">元石 ${n(me.stones)} <button onclick="window.restoreEssence()">恢复×${restoreAmt}</button></div>${isAdmin()?`<button onclick="window.setRestoreAmount()">设置恢复数量</button>`:''}<button onclick="window.goBag()">打开乾坤袋</button><div class="equip-bar">${eqHtml}</div>`;
+}
+
+const oldDetail = detail;
 detail = function(type,id){
   const item=getItem(type,id); if(!item) return;
   const cost=itemAbsorbCost(type,item), use=itemUseCost(type,item), attrs=effectAttrs(type,item);
-  let rows=[['名称',item.name||id],['等级',item.rank||'-'],['流派',item.path||'-'],['价格',n(item.price)+' 元石'],['吸收真元',cost],['使用真元',use],['距离',v72RangeText(item)],['冷却时间',v72CooldownText(item)],['持续/定身时间',v72DurationText(item)],['攻击',attrs.attack],['防御',attrs.defense],['生命',attrs.life],['速度',attrs.speed],['精神',attrs.spirit],['效果',item.effect||item.note||'-'],['创作者',item.creator||'-'],['状态',item.status||'approved']];
-  if(type==='killmoves')rows.splice(4,0,['杀招属性',attrCN[item.effectAttr]||'-']);
-  if(type==='killmoves'||type==='guhouses')rows.splice(4,0,['所需蛊虫',(item.guIds||[]).map(x=>itemName('guworms',x)).join('、')||'-']);
+  let rows = [['名称',item.name||id],['等级',item.rank||'-'],['流派',item.path||'-'],['价格',n(item.price)+' 元石'],['吸收真元',cost],['使用真元',use],['距离',v72RangeText(item)],['冷却时间',v72CooldownText(item)],['持续/定身时间',v72DurationText(item)],['攻击',attrs.attack],['防御',attrs.defense],['生命',attrs.life],['速度',attrs.speed],['精神',attrs.spirit],['效果',item.effect||item.note||'-'],['创作者',item.creator||'-'],['状态',item.status||'approved']];
+  if(type==='killmoves') rows.splice(4,0,['杀招属性',attrCN[item.effectAttr]||'-']);
+  if(type==='killmoves'||type==='guhouses') rows.splice(4,0,['所需蛊虫',(item.guIds||[]).map(x=>itemName('guworms',x)).join('、')||'-']);
   openModal(`${modalHead(typeCN[type]+'卷宗')}<div class="detail-box">${img(item.image)}<table class="detail-table">${rows.map(r=>`<tr><th>${safe(r[0])}</th><td>${safe(r[1])}</td></tr>`).join('')}</table><div class="toolbar"><button onclick="window.buyItem('${type}','${id}')">购买</button>${type!=='recipes'&&type!=='materials'?`<button onclick="window.absorbItem('${type}','${id}')">吸收/炼化</button><button onclick="window.useThing('${type}','${id}')">使用</button><button onclick="window.equipThing('${type}','${id}')">装备</button>`:''}${canEditItem(item)?`<button onclick="window.editItem('${type}','${id}')">编辑</button>`:''}</div></div>`);
-};
-window.detail=detail;
+}
+window.detail = detail;
 
-const oldEditItemV72 = editItem;
+const oldEditItem = editItem;
 editItem = async function(type,id=null){
-  if(!requireLogin())return; const item=id?getItem(type,id):{};
-  if(id && !canEditItem(item))return toast('只能编辑自己创作的，管理员可编辑全部');
+  if(!requireLogin())return; const item=id?getItem(type,id):{}; if(id && !canEditItem(item))return toast('只能编辑自己创作的，管理员可编辑全部');
   if((type==='killmoves'||type==='guhouses') && !id && !canCreateKillOrHouse(type))return toast(type==='killmoves'?'创建杀招需主流派大师成就':'创建凡蛊屋需主流派宗师成就');
-  if(!['guworms','killmoves','guhouses'].includes(type))return oldEditItemV72(type,id);
   let html=modalHead((id?'编辑':'创作')+typeCN[type]); let inner='';
   if(type==='guworms') inner=field('name','名称','text',item.name)+select('rank','等级',ranks,item.rank)+select('path','流派',paths,item.path)+field('image','图标路径','text',item.image)+field('price','价格','number',item.price)+field('absorbCost','吸收所需真元','number',item.absorbCost)+field('useCost','使用一次真元','number',item.useCost)+field('range','距离','text',item.range)+field('cooldown','冷却时间(秒)','text',item.cooldown)+field('duration','持续/定身时间','text',item.duration)+field('attack','攻击','number',item.attack)+field('defense','防御','number',item.defense)+field('life','生命','number',item.life)+field('speed','速度','number',item.speed)+field('spirit','精神','number',item.spirit)+area('effect','效果',item.effect);
-  if(type==='killmoves') inner=field('name','名称','text',item.name)+select('rank','等级',ranks,item.rank)+select('path','流派',paths,item.path)+select('effectAttr','杀招单独属性',["attack","defense","life","speed","spirit"],item.effectAttr||'attack')+field('image','图标路径','text',item.image)+field('price','价格','number',item.price)+field('range','距离','text',item.range)+field('cooldown','冷却时间(秒)','text',item.cooldown)+field('duration','持续时间','text',item.duration)+guMulti(item.guIds||[],true)+area('effect','效果描述',item.effect);
-  if(type==='guhouses') inner=field('name','名称','text',item.name)+select('rank','等级',ranks,item.rank)+select('path','流派',paths,item.path)+field('image','图标路径','text',item.image)+field('price','价格','number',item.price)+field('range','距离','text',item.range)+field('cooldown','冷却时间(秒)','text',item.cooldown)+field('duration','持续时间','text',item.duration)+guMulti(item.guIds||[],true)+area('effect','效果描述',item.effect);
+  else if(type==='killmoves') inner=field('name','名称','text',item.name)+select('rank','等级',ranks,item.rank)+select('path','流派',paths,item.path)+select('effectAttr','杀招单独属性',["attack","defense","life","speed","spirit"],item.effectAttr||'attack')+field('image','图标路径','text',item.image)+field('price','价格','number',item.price)+field('range','距离','text',item.range)+field('cooldown','冷却时间(秒)','text',item.cooldown)+field('duration','持续时间','text',item.duration)+guMulti(item.guIds||[],true)+area('effect','效果描述',item.effect);
+  else if(type==='guhouses') inner=field('name','名称','text',item.name)+select('rank','等级',ranks,item.rank)+select('path','流派',paths,item.path)+field('image','图标路径','text',item.image)+field('price','价格','number',item.price)+field('range','距离','text',item.range)+field('cooldown','冷却时间(秒)','text',item.cooldown)+field('duration','持续时间','text',item.duration)+guMulti(item.guIds||[],true)+area('effect','效果描述',item.effect);
+  else return oldEditItem(type,id);
   html+=`<form id="editForm" class="form"><div class="row">${inner}</div><div class="toolbar"><button>保存</button>${id&&canEditItem(item)?`<button type="button" class="danger" id="delBtn">删除</button>`:''}</div><p class="muted">普通玩家创作默认进入待审核，管理员审核通过后公开。</p></form>`; openModal(html);
-  $('editForm').onsubmit=async e=>{e.preventDefault(); const fd=new FormData(e.target); const data=Object.fromEntries(fd.entries()); if(type==='killmoves'||type==='guhouses')data.guIds=[...e.target.guIds.selectedOptions].map(o=>o.value); ['price','attack','defense','life','speed','spirit','absorbCost','useCost'].forEach(k=>{if(k in data)data[k]=Number(data[k]||0)}); data.creator=item.creator||accountId; if(!id)data.status=isAdmin()?'approved':'pending'; else if(!isAdmin()&&item.status==='rejected')data.status='pending'; await setDoc(id?ref(type,id):doc(col(type)),{...item,...data,updatedAt:serverTimestamp()},{merge:true}); closeModal(); toast('已保存');};
-  if($('delBtn'))$('delBtn').onclick=async()=>{if(confirm('确定删除？')){await deleteDoc(ref(type,id));closeModal();}};
-};
+  $('editForm').onsubmit=async e=>{e.preventDefault(); const fd=new FormData(e.target); const data=Object.fromEntries(fd.entries()); if(type==='killmoves'||type==='guhouses') data.guIds=[...e.target.guIds.selectedOptions].map(o=>o.value); ['price','attack','defense','life','speed','spirit','absorbCost','useCost'].forEach(k=>{if(k in data)data[k]=Number(data[k]||0)}); data.creator= item.creator || accountId; if(!id) data.status=isAdmin()?'approved':'pending'; else if(!isAdmin() && item.status==='rejected') data.status='pending'; await setDoc(id?ref(type,id):doc(col(type)),{...item,...data,updatedAt:serverTimestamp()},{merge:true}); closeModal(); toast('已保存');};
+  if($('delBtn')) $('delBtn').onclick=async()=>{if(confirm('确定删除？')){await deleteDoc(ref(type,id)); closeModal();}};
+}
 window.editItem=editItem;
 
 function v72InventoryOptions(type){return Object.entries(myInv()[type]||{}).filter(([id,v])=>n(v.count)>0).map(([id,v])=>`<option value="${safe(type+':'+id)}">${safe(typeCN[type]+'：'+itemName(type,id)+' ×'+n(v.count))}</option>`).join('')}
-async function v72FinalizeTrade(trade,confirm){
-  const from=trade.from,to=trade.to; if(!from||!to)return;
-  if(!(confirm?.[from]&&confirm?.[to]))return;
-  const aDoc=await getDoc(ref('users',from)); const bDoc=await getDoc(ref('users',to)); if(!aDoc.exists()||!bDoc.exists())return toast('交易玩家不存在');
-  const A={id:from,...aDoc.data()}, B={id:to,...bDoc.data()}; const offer=trade.offer||{}; const ao=offer[from]||{stones:0,items:[]}, bo=offer[to]||{stones:0,items:[]};
-  function enough(p,o){if(n(p.stones)<n(o.stones))return false; for(const it of (o.items||[])){if(n(p.inventory?.[it.type]?.[it.itemId]?.count)<n(it.count||1))return false;} return true;}
-  if(!enough(A,ao)||!enough(B,bo))return toast('有一方物品或元石不足');
-  function apply(p,give,take){const inv=p.inventory||{guworms:{},killmoves:{},guhouses:{},recipes:{},materials:{}}; let stones=n(p.stones)-n(give.stones)+n(take.stones); for(const it of (give.items||[])){inv[it.type]||={};inv[it.type][it.itemId]||={count:0};inv[it.type][it.itemId].count-=n(it.count||1);if(inv[it.type][it.itemId].count<=0)delete inv[it.type][it.itemId];} for(const it of (take.items||[])){inv[it.type]||={};inv[it.type][it.itemId]||={count:0};inv[it.type][it.itemId].count+=n(it.count||1);} return {inventory:inv,stones};}
-  await setDoc(ref('users',from),apply(A,ao,bo),{merge:true}); await setDoc(ref('users',to),apply(B,bo,ao),{merge:true}); await setDoc(ref('trades',trade.id),{status:'success',finishedAt:serverTimestamp()},{merge:true}); toast('交易成功'); closeModal();
+window.tradeDetail=function(id){const t=state.trades.find(x=>x.id===id); if(!t)return; const mine=t.offer?.[accountId]||{stones:0,items:[]}; const opts=['guworms','killmoves','guhouses','recipes','materials'].map(v72InventoryOptions).join(''); openModal(`${modalHead('线上交易台')}<p>交易进行时请勿离开，取消或成功后释放交易台。</p><label>摆上元石<input id="offerStones" type="number" value="${n(mine.stones)}"></label><label>选择背包物品<select id="offerItems" multiple size="10">${opts}</select></label><div class="toolbar"><button id="saveOffer">更新出价</button><button id="confirmTrade">确认交易</button><button id="cancelTrade" class="danger">取消交易</button></div><pre>${safe(JSON.stringify(t.offer,null,2))}</pre>`); $('saveOffer').onclick=async()=>{const items=[...$('offerItems').selectedOptions].map(o=>{const [type,itemId]=o.value.split(':');return {type,itemId,count:1,name:itemName(type,itemId)}}); const offer=t.offer||{}; offer[accountId]={stones:n($('offerStones').value),items}; await setDoc(ref('trades',id),{offer,confirm:{...t.confirm,[accountId]:false}},{merge:true}); closeModal();toast('交易出价已更新');}; $('confirmTrade').onclick=async()=>{const confirm={...t.confirm,[accountId]:true}; await setDoc(ref('trades',id),{confirm},{merge:true}); toast('已确认，等待对方');}; $('cancelTrade').onclick=async()=>{await setDoc(ref('trades',id),{status:'cancelled'},{merge:true}); closeModal();};}
+
+window.createSect=function(){if(!requireLogin())return; if(rankNum(realmRank(me.realm))<3 && !isAdmin())return toast('三转以上才可创建势力'); openModal(`${modalHead('创建势力')}<form id="sectForm" class="form"><label>势力名<input name="name"></label><label>势力宣言<textarea name="note"></textarea></label><button>创建</button></form>`); $('sectForm').onsubmit=async e=>{e.preventDefault(); const data=Object.fromEntries(new FormData(e.target).entries()); await setDoc(ref('sects',data.name),{...data,master:accountId,createdAt:serverTimestamp()},{merge:true}); closeModal();toast('势力已创建');};}
+function renderSects(){ $('content').innerHTML=`<div class="toolbar"><button onclick="window.createSect()">创建势力（三转以上）</button></div><div class="grid">${(state.sects||[]).map(s=>`<div class="card"><h3>${safe(s.name||s.id)}</h3><p>宗主：${safe(s.master||'未定')}</p><p>${safe(s.note||'')}</p></div>`).join('')||empty()}</div>`; }
+
+function v72RoomId(kind,target='world'){return kind==='world'?'world':kind+':'+[accountId,target].sort().join('|')}
+window.createGroup=function(){if(!requireLogin())return; const name=prompt('群聊名称'); if(!name)return; window.chatChannel='group:'+name; render();}
+window.privateChat=function(){if(!requireLogin())return; const to=prompt('输入对方玩家ID'); if(!to)return; window.chatChannel=v72RoomId('private',to); render();}
+function renderChat(){ const ch=window.chatChannel||'world'; $('content').innerHTML=`<div class="toolbar"><button onclick="window.chatChannel='world';render()">公共聊天</button><button onclick="window.createGroup()">创建/进入群聊</button><button onclick="window.privateChat()">好友私信</button></div><p class="muted">当前频道：${safe(ch)}</p><div class="chat-box">${state.messages.filter(m=>(m.channel||'world')===ch).map(m=>`<div class="msg"><b>${safe(m.name)}</b>：${safe(m.text)}</div>`).join('')}</div><form class="chat-input" id="chatForm"><input name="text" placeholder="传音入密……"><button>发送</button></form>`; $('chatForm').onsubmit=async e=>{e.preventDefault(); const text=e.target.text.value.trim(); if(!text)return; await addDoc(col('messages'),{name:me?.name||accountId||'无名',text,channel:ch,createdAt:serverTimestamp()}); e.target.reset();}; }
+
+
+/* ===================== V7.3 手机优化 / 装备限制 / 创作权限修正 ===================== */
+function v73AttainLevel(v){ return Math.max(0, attainments.indexOf(v||'无')); }
+function v73HasAttain(minName){
+  const need=v73AttainLevel(minName);
+  return isAdmin() || v73AttainLevel(me?.mainAttain)>=need || v73AttainLevel(me?.subAttain)>=need;
 }
-window.tradeDetail=function(id){const t=state.trades.find(x=>x.id===id); if(!t)return; const mine=t.offer?.[accountId]||{stones:0,items:[]}; const opts=['guworms','killmoves','guhouses','recipes','materials'].map(v72InventoryOptions).join(''); openModal(`${modalHead('线上交易台')}<p>交易进行时请勿离开，取消或成功后释放交易台。</p><label>摆上元石<input id="offerStones" type="number" value="${n(mine.stones)}"></label><label>选择背包物品<select id="offerItems" multiple size="10">${opts}</select></label><div class="toolbar"><button id="saveOffer">更新出价</button><button id="confirmTrade">确认交易</button><button id="cancelTrade" class="danger">取消交易</button></div><pre>${safe(JSON.stringify(t.offer,null,2))}</pre>`); $('saveOffer').onclick=async()=>{const items=[...$('offerItems').selectedOptions].map(o=>{const [type,itemId]=o.value.split(':');return {type,itemId,count:1,name:itemName(type,itemId)}}); const offer=t.offer||{}; offer[accountId]={stones:n($('offerStones').value),items}; await setDoc(ref('trades',id),{offer,confirm:{...t.confirm,[accountId]:false}},{merge:true}); closeModal();toast('交易出价已更新');}; $('confirmTrade').onclick=async()=>{const confirm={...t.confirm,[accountId]:true}; await setDoc(ref('trades',id),{confirm},{merge:true}); await v72FinalizeTrade(t,confirm);}; $('cancelTrade').onclick=async()=>{await setDoc(ref('trades',id),{status:'cancelled'},{merge:true});closeModal();};};
-
-window.createSect=function(){if(!requireLogin())return; if(rankNum(realmRank(me.realm))<3&&!isAdmin())return toast('三转以上才可创建势力'); openModal(`${modalHead('创建势力')}<form id="sectForm" class="form"><label>势力名<input name="name"></label><label>势力宣言<textarea name="note"></textarea></label><button>创建</button></form>`); $('sectForm').onsubmit=async e=>{e.preventDefault();const data=Object.fromEntries(new FormData(e.target).entries());if(!data.name)return toast('填写势力名');await setDoc(ref('sects',data.name),{...data,master:accountId,createdAt:serverTimestamp()},{merge:true});closeModal();toast('势力已创建');};};
-renderSects=function(){ $('content').innerHTML=`<div class="toolbar"><button onclick="window.createSect()">创建势力（三转以上）</button></div><div class="grid">${(state.sects||[]).map(s=>`<div class="card"><h3>${safe(s.name||s.id)}</h3><p>宗主：${safe(s.master||'未定')}</p><p>${safe(s.note||'')}</p></div>`).join('')||empty()}</div>`; };
-
-window.createGroup=function(){if(!requireLogin())return; const name=prompt('群聊名称'); if(!name)return; window.chatChannel='group:'+name; render();};
-window.privateChat=function(){if(!requireLogin())return; const to=prompt('输入对方玩家ID'); if(!to)return; window.chatChannel='private:'+[accountId,to].sort().join('|'); render();};
-window.addFriend=async function(){if(!requireLogin())return; const to=prompt('输入好友玩家ID'); if(!to||to===accountId)return; const friends=Array.isArray(me.friends)?me.friends:[]; if(!friends.includes(to))friends.push(to); await saveMe({friends}); toast('已加入好友列表'); render();};
-renderChat=function(){const ch=window.chatChannel||'world'; const friends=(me?.friends||[]).map(f=>`<button onclick="window.chatChannel='private:${[accountId,f].sort().join('|')}';render()">${safe(f)}</button>`).join(''); $('content').innerHTML=`<div class="toolbar"><button onclick="window.chatChannel='world';render()">公共聊天</button><button onclick="window.createGroup()">创建/进入群聊</button><button onclick="window.privateChat()">私信</button><button onclick="window.addFriend()">加好友</button>${friends}</div><p class="muted">当前频道：${safe(ch)}</p><div class="chat-box">${state.messages.filter(m=>(m.channel||'world')===ch).map(m=>`<div class="msg"><b>${safe(m.name)}</b>：${safe(m.text)}</div>`).join('')}</div><form class="chat-input" id="chatForm"><input name="text" placeholder="传音入密……"><button>发送</button></form>`; $('chatForm').onsubmit=async e=>{e.preventDefault(); const text=e.target.text.value.trim(); if(!text)return; await addDoc(col('messages'),{name:me?.name||accountId||'无名',text,channel:ch,createdAt:serverTimestamp()}); e.target.reset();};};
+canCreateKillOrHouse = function(type){
+  if(isAdmin()) return true;
+  return type==='killmoves' ? v73HasAttain('大师') : v73HasAttain('宗师');
+};
+function v73RawAttrs(type,item){
+  const out={attack:0,defense:0,life:0,speed:0,spirit:0};
+  if(!item) return out;
+  if(type==='guworms'){ attrKeys.forEach(k=>out[k]=n(item[k])); return out; }
+  if(type==='killmoves'){
+    const selected=item.effectAttr||'attack';
+    const ids=item.guIds||item.requiredIds||[];
+    out[selected]=ids.reduce((a,id)=>a+n(getItem('guworms',id)?.[selected]),0)||n(item[selected]);
+    return out;
+  }
+  if(type==='guhouses'){
+    const ids=item.guIds||item.requiredIds||[];
+    attrKeys.forEach(k=>out[k]=ids.reduce((a,id)=>a+n(getItem('guworms',id)?.[k]),0)||n(item[k]));
+    return out;
+  }
+  return out;
+}
+effectAttrs = function(type,item,p=me){
+  const out=v73RawAttrs(type,item);
+  if(type==='guworms' && item?.path && !samePath(item,p)){
+    attrKeys.forEach(k=>{ if(out[k]>0) out[k]=Math.max(1,Math.floor(out[k]/2)); });
+  }
+  return out;
+};
+function v73TopAttrRaw(type,item){
+  const attrs=v73RawAttrs(type,item); let best='attack', val=-Infinity;
+  attrKeys.forEach(k=>{ if(n(attrs[k])>val){best=k;val=n(attrs[k]);} });
+  return `${attrCN[best]}+${Math.max(0,val)}`;
+}
+function v73IsEquipped(type,id,p=me){ return v72EquipArray(p).some(e=>e && e.type===type && e.id===id); }
+function v73Absorbed(type,id,p=me){ return !!p?.absorbed?.[type]?.[id]; }
+function v73CanCreateLibrary(type){
+  if(isAdmin()) return true;
+  if((type==='guworms'||type==='recipes') && rankNum(realmRank(me?.realm))<3) return false;
+  return true;
+}
+function v73GuCards(selected=[], ownOnly=false){
+  const ids=ownOnly&&!isAdmin()?Object.keys(myInv().guworms||{}).filter(id=>invCount('guworms',id)>0):approved(state.guworms).map(x=>x.id);
+  return `<div class="wide"><b>所需蛊虫（点击多选）</b><div class="gu-pick-grid">${ids.map(id=>{const g=getItem('guworms',id)||{};return `<label class="gu-pick ${selected.includes(id)?'picked':''}">${img(g.image)}<input type="checkbox" name="guIdsBox" value="${safe(id)}" ${selected.includes(id)?'checked':''}><span>${safe(itemName('guworms',id))}</span><em>${safe(g.rank||'一转')}｜${ownOnly&&!isAdmin()?`×${invCount('guworms',id)}`:safe(g.path||'')}</em></label>`}).join('')||'<p class="muted">暂无可选蛊虫</p>'}</div></div>`;
+}
+guMulti = function(selected=[], ownOnly=false){ return v73GuCards(selected,ownOnly); };
+window.toggleEquipDock=function(){ localStorage.setItem('equipDockOpen', localStorage.getItem('equipDockOpen')==='1'?'0':'1'); renderVitals(); };
+window.openEquipPanel=function(){
+  if(!requireLogin())return;
+  const eq=v72EquipArray();
+  openModal(`${modalHead('十格装备栏')}<p class="muted">已吸收蛊虫、杀招、凡蛊屋才能装备；同一蛊物不能重复占多个格子。</p><div class="equip-panel-grid">${eq.map((e,i)=>{const item=e?getItem(e.type,e.id):null;const left=v72CooldownLeft(i);return `<div class="equip-card"><b>${i}</b>${e?img(item?.image):'<div class="empty-equip">空</div>'}<strong>${safe(e?itemName(e.type,e.id):'空位')}</strong>${e?`<em>${safe(v73TopAttrRaw(e.type,item))}</em><button onclick="window.useEquipped(${i})">${left>0?left+'秒':'使用'}</button><button class="mini" onclick="window.unequipThing(${i})">卸下</button>`:'<span class="muted">从蛊物详情中装备</span>'}</div>`}).join('')}</div>`);
+};
+renderVitals = function(){
+  let box=$('vitalsDock'); if(!box){box=document.createElement('div');box.id='vitalsDock';document.body.appendChild(box)}
+  if(!me){box.innerHTML=`<button onclick="window.loginModal()">入世登录</button>`;return}
+  const attrs=computedAttrs(me), hpMax=attrs.life, hp=n(me.hp||hpMax), esMax=maxEssence(me), es=n(me.essence||esMax), rank=realmRank(me.realm);
+  const restoreAmt=v72RestoreAmount(); const eq=v72EquipArray(); const open=localStorage.getItem('equipDockOpen')==='1'; const showCount=open?10:5;
+  const eqHtml=eq.slice(0,showCount).map((e,i)=>{const left=v72CooldownLeft(i);const item=e?getItem(e.type,e.id):null;const name=e?v72EquippedLabel(e):'空';return `<div class="equip-slot ${e?'filled':''}"><b>${i}</b>${e?img(item?.image):''}<span>${safe(name.slice(0,3))}</span>${e?`<em>${safe(v73TopAttrRaw(e.type,item))}</em><button onclick="window.useEquipped(${i})">${left>0?left+'秒':'用'}</button>`:''}</div>`}).join('');
+  box.innerHTML=`<div class="vital-title">${safe(me.name||accountId)}</div><div class="bar-wrap"><span>生命 ${hp}/${hpMax}</span><div class="bar"><i style="width:${Math.min(100,hp/hpMax*100)}%"></i></div></div><div class="bar-wrap"><span>${essenceName[rank]} ${es}/${esMax}</span><div class="bar essence ${essenceClass[rank]}"><i style="width:${Math.min(100,es/esMax*100)}%"></i></div></div><div class="stone-line">元石 ${n(me.stones)} <button onclick="window.restoreEssence()">恢复×${restoreAmt}</button></div>${isAdmin()?`<button onclick="window.setRestoreAmount()">设置恢复数量</button>`:''}<div class="equip-actions"><button onclick="window.openEquipPanel()">装备栏</button><button onclick="window.toggleEquipDock()">${open?'收起':'展开'}</button><button onclick="window.goBag()">乾坤袋</button></div><div class="equip-title">快捷格 ${open?'0-9':'0-4'}</div><div class="equip-bar compact">${eqHtml}</div>`;
+};
+window.equipThing = async function(type,id){
+  if(!requireLogin())return; if(!v72CanEquip(type))return toast('该物不能装备');
+  if(!v73Absorbed(type,id)) return toast('未吸收/炼化的蛊物不能装备');
+  const eq=v72EquipArray(); if(eq.some(e=>e && e.type===type && e.id===id)) return toast('该蛊物已经装备，不能重复占格');
+  const slot=Number(prompt('装备到哪个格子？请输入0-9','0'));
+  if(!Number.isInteger(slot)||slot<0||slot>9)return toast('格子必须是0-9');
+  eq[slot]={type,id}; await saveMe({equipped:eq}); toast(`已装备到${slot}号位`); renderVitals();
+};
+const v73OldDetail = detail;
+detail = function(type,id){
+  const item=getItem(type,id); if(!item)return;
+  const cost=itemAbsorbCost(type,item), use=itemUseCost(type,item), attrs=v73RawAttrs(type,item);
+  let rows=[['名称',item.name||id],['等级',item.rank||'-'],['流派',item.path||'-'],['价格',n(item.price)+' 元石'],['吸收真元',cost],['使用真元',use],['距离',v72RangeText(item)],['冷却时间',v72CooldownText(item)],['持续/定身时间',v72DurationText(item)],['攻击',attrs.attack],['防御',attrs.defense],['生命',attrs.life],['速度',attrs.speed],['精神',attrs.spirit],['效果',item.effect||item.note||'-'],['创作者',item.creator||'-'],['状态',item.status||'approved']];
+  if(type==='killmoves')rows.splice(4,0,['杀招属性',attrCN[item.effectAttr]||'-']);
+  if(type==='killmoves'||type==='guhouses')rows.splice(4,0,['所需蛊虫',(item.guIds||[]).map(x=>itemName('guworms',x)).join('、')||'-']);
+  const equipOK = ['guworms','killmoves','guhouses'].includes(type) && v73Absorbed(type,id);
+  openModal(`${modalHead(typeCN[type]+'卷宗')}<div class="detail-box">${img(item.image)}<table class="detail-table">${rows.map(r=>`<tr><th>${safe(r[0])}</th><td>${safe(r[1])}</td></tr>`).join('')}</table><div class="toolbar"><button onclick="window.buyItem('${type}','${id}')">购买</button>${type!=='recipes'&&type!=='materials'?`<button onclick="window.absorbItem('${type}','${id}')">吸收/炼化</button><button onclick="window.useThing('${type}','${id}')">使用</button>${equipOK?`<button onclick="window.equipThing('${type}','${id}')">装备</button>`:`<button disabled>未吸收不可装备</button>`}`:''}${canEditItem(item)?`<button onclick="window.editItem('${type}','${id}')">编辑</button>`:''}</div></div>`);
+};
+window.detail=detail;
+const v73OldEditItem = editItem;
+editItem = async function(type,id=null){
+  if(!requireLogin())return;
+  if(!id && !v73CanCreateLibrary(type)) return toast('三转以上才可创建蛊虫或蛊方');
+  const item=id?getItem(type,id):{};
+  if(id && !canEditItem(item))return toast('只能编辑自己创作的，管理员可编辑全部');
+  if((type==='killmoves'||type==='guhouses') && !id && !canCreateKillOrHouse(type))return toast(type==='killmoves'?'任意流派达到大师，才可创建杀招':'任意流派达到宗师，才可创建凡蛊屋');
+  if(!['guworms','killmoves','guhouses'].includes(type))return v73OldEditItem(type,id);
+  let html=modalHead((id?'编辑':'创作')+typeCN[type]); let inner='';
+  if(type==='guworms') inner=field('name','名称','text',item.name)+select('rank','等级',ranks,item.rank)+select('path','流派',paths,item.path)+field('image','图标路径','text',item.image)+field('price','价格','number',item.price)+field('absorbCost','吸收所需真元','number',item.absorbCost)+field('useCost','使用一次真元','number',item.useCost)+field('range','距离','text',item.range)+field('cooldown','冷却时间(秒)','text',item.cooldown)+field('duration','持续/定身时间','text',item.duration)+field('attack','攻击','number',item.attack)+field('defense','防御','number',item.defense)+field('life','生命','number',item.life)+field('speed','速度','number',item.speed)+field('spirit','精神','number',item.spirit)+area('effect','效果',item.effect);
+  if(type==='killmoves') inner=field('name','名称','text',item.name)+select('rank','等级',ranks,item.rank)+select('path','流派',paths,item.path)+select('effectAttr','杀招单独属性',attrKeys,item.effectAttr||'attack')+field('image','图标路径','text',item.image)+field('price','价格','number',item.price)+field('range','距离','text',item.range)+field('cooldown','冷却时间(秒)','text',item.cooldown)+field('duration','持续时间','text',item.duration)+v73GuCards(item.guIds||[],true)+area('effect','效果描述',item.effect);
+  if(type==='guhouses') inner=field('name','名称','text',item.name)+select('rank','等级',ranks,item.rank)+select('path','流派',paths,item.path)+field('image','图标路径','text',item.image)+field('price','价格','number',item.price)+field('range','距离','text',item.range)+field('cooldown','冷却时间(秒)','text',item.cooldown)+field('duration','持续时间','text',item.duration)+v73GuCards(item.guIds||[],true)+area('effect','效果描述',item.effect);
+  html+=`<form id="editForm" class="form"><div class="row">${inner}</div><div class="toolbar"><button>保存</button>${id&&canEditItem(item)?`<button type="button" class="danger" id="delBtn">删除</button>`:''}</div><p class="muted">普通玩家创作默认进入待审核，管理员审核通过后公开。</p></form>`; openModal(html);
+  document.querySelectorAll('.gu-pick input').forEach(inp=>inp.onchange=()=>inp.closest('.gu-pick').classList.toggle('picked',inp.checked));
+  $('editForm').onsubmit=async e=>{e.preventDefault(); const fd=new FormData(e.target); const data=Object.fromEntries(fd.entries()); if(type==='killmoves'||type==='guhouses')data.guIds=[...document.querySelectorAll('input[name="guIdsBox"]:checked')].map(x=>x.value); ['price','attack','defense','life','speed','spirit','absorbCost','useCost'].forEach(k=>{if(k in data)data[k]=Number(data[k]||0)}); data.creator=item.creator||accountId; if(!id)data.status=isAdmin()?'approved':'pending'; else if(!isAdmin()&&item.status==='rejected')data.status='pending'; await setDoc(id?ref(type,id):doc(col(type)),{...item,...data,updatedAt:serverTimestamp()},{merge:true}); closeModal(); toast('已保存');};
+  if($('delBtn'))$('delBtn').onclick=async()=>{if(confirm('确定删除？')){await deleteDoc(ref(type,id));closeModal();}};
+};
+window.editItem=editItem;
+renderBag = function(){
+  if(!requireLogin())return; const inv=myInv(), attrs=computedAttrs(me);
+  const section=(type)=>`<h3>${typeCN[type]}</h3><div class="bag-grid">${Object.entries(inv[type]||{}).map(([id,v])=>`<div class="bag-item" onclick="window.detailFromBag('${type}','${id}')">${img(getItem(type,id)?.image)}<b>${safe(itemName(type,id))}</b><span>×${n(v.count)}</span></div>`).join('')||'<p class="muted">空</p>'}</div>`;
+  const absorbedBlock=['guworms','killmoves','guhouses'].flatMap(t=>Object.keys(me.absorbed?.[t]||{}).map(id=>`<div class="bag-item ${v73IsEquipped(t,id)?'equipped-mark':''}" onclick="window.detailFromBag('${t}','${id}')">${img(getItem(t,id)?.image)}<b>${safe(itemName(t,id))}</b><span>${v73IsEquipped(t,id)?'被装备':'已吸收'}</span>${t==='guworms'?`<button onclick="event.stopPropagation();window.setBornGu('${id}')">设本命</button>`:''}</div>`)).join('')||'<p class="muted">暂无</p>';
+  $('content').innerHTML=`<div class="scroll-panel"><h2>个人总览</h2><p>元石：${n(me.stones)}｜真元：${n(me.essence)}/${maxEssence(me)}｜吸收位：${Object.keys(me.absorbed?.guworms||{}).length+Object.keys(me.absorbed?.killmoves||{}).length+Object.keys(me.absorbed?.guhouses||{}).length}/${slots(me)}</p><p>五维：生命${attrs.life} 攻击${attrs.attack} 防御${attrs.defense} 速度${attrs.speed} 精神${attrs.spirit}</p><p>本命蛊：${safe(me.bornGu?itemName('guworms',me.bornGu):'未定')}</p><div class="toolbar"><button onclick="window.restoreEssence()">一键元石恢复</button><button onclick="window.openEquipPanel()">打开装备栏</button></div></div>${section('guworms')}${section('killmoves')}${section('guhouses')}${section('recipes')}${section('materials')}<h3>已吸收</h3><div class="bag-grid">${absorbedBlock}</div>`;
+};
+const v73OldCreateSect = window.createSect;
+window.createSect=function(){if(!requireLogin())return; if(rankNum(realmRank(me.realm))<3&&!isAdmin())return toast('三转以上才可创建势力'); return v73OldCreateSect();};
 
 
 boot();
