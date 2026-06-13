@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>五域两天 · 蛊师世界平台 v2.0</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="toast"></div>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="seal">蛊</div>
+        <div><h1>五域两天</h1><p>蛊师世界平台 v2.0</p></div>
+      </div>
+      <nav id="nav"></nav>
+      <div class="user-box">
+        <div class="small-title">当前身份</div>
+        <div id="currentUserName">未入世</div>
+        <button id="openProfileBtn">进入/创建我的资料</button>
+        <button id="adminBtn" class="ghost">切换管理员</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <h2 id="pageTitle">天机殿</h2>
+          <p id="pageDesc">世界总览、公告、最新动态。</p>
+        </div>
+        <div class="search-wrap">
+          <input id="globalSearch" placeholder="搜索人物、蛊虫、杀招、势力……" />
+        </div>
+      </header>
+
+      <section id="content"></section>
+    </main>
+  </div>
+
+  <dialog id="modal"><div id="modalContent"></div></dialog>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
