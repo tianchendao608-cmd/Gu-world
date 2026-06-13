@@ -80,7 +80,49 @@ function editForm(type,item){ const i=item||{}; let html='';
  if(item && $('deleteBtn')) $('deleteBtn').onclick=async()=>{if(!admin && type!=='players') return toast('只有管理员能删除'); if(confirm('确定删除？')){await deleteDoc(doc(db,type,item.id)); closeModal();}};
 }
 
-function detail(type,id){ const item=byId(state[type],id); if(!item) return; let html=modalHead(item.name||id); html+=`<div class="card">${img(item.image)}<pre style="white-space:pre-wrap;font-family:inherit">${safe(JSON.stringify(item,null,2))}</pre><div class="toolbar"><button id="editThis">编辑</button></div></div>`; openModal(html); $('editThis').onclick=()=>editForm(type,item); }
+const detailLabels = {
+  id:'编号', name:'名称', rank:'等级', path:'流派', image:'图片路径', attack:'攻击', defense:'防御', life:'生命/回血', speed:'速度', spirit:'精神', range:'距离', cooldown:'冷却', duration:'持续/定身', price:'价格', owner:'持有者', effect:'效果', ownerUid:'创建者ID', createdAt:'创建时间',
+  age:'年龄', faction:'势力', realm:'境界', aptitude:'资质', mainPath:'主流派', mainAttain:'主流派成就', subPath:'副流派', subAttain:'副流派成就', power:'力量', stones:'元石', wins:'胜场', gu:'拥有蛊虫', kills:'拥有杀招', note:'备注',
+  requiredGu:'所需蛊虫', cost:'消耗', creator:'创作者', coreGu:'核心蛊', components:'组成蛊虫', move:'移动', target:'炼制目标', rate:'成功率', materials:'材料', replace:'替代材料', master:'宗主/族长', level:'等级', territory:'领地'
+};
+const detailOrder = {
+  guworms:['name','rank','path','attack','defense','life','speed','spirit','range','cooldown','duration','price','owner','effect','image','ownerUid'],
+  killmoves:['name','path','requiredGu','power','range','cooldown','cost','creator','effect','image','ownerUid'],
+  guhouses:['name','rank','coreGu','components','attack','defense','move','owner','effect','image','ownerUid'],
+  recipes:['name','target','rate','materials','replace','owner','note','ownerUid'],
+  players:['name','age','aptitude','realm','faction','mainPath','mainAttain','subPath','subAttain','life','power','speed','defense','spirit','stones','wins','gu','kills','note','ownerUid'],
+  sects:['name','master','level','territory','stones','note','image']
+};
+function fmtVal(k,v){
+  if(v===undefined || v===null || v==='') return '—';
+  if(k==='createdAt' && typeof v==='object' && v.seconds){ return new Date(v.seconds*1000).toLocaleString('zh-CN'); }
+  if(typeof v==='object') return safe(JSON.stringify(v));
+  return safe(v);
+}
+function detailTable(type,item){
+  const keys = (detailOrder[type] || Object.keys(item)).filter(k => k in item && k !== 'image' && k !== 'createdAt');
+  return `<table class="detail-table"><tbody>${keys.map(k=>`<tr><th>${detailLabels[k]||k}</th><td>${fmtVal(k,item[k])}</td></tr>`).join('')}</tbody></table>`;
+}
+function canEditItem(type,item){
+  if(admin) return true;
+  if(type==='players') return canEditPlayer(item);
+  return item.ownerUid===uid;
+}
+function detail(type,id){
+  const item=byId(state[type],id); if(!item) return;
+  const can = canEditItem(type,item);
+  let html=modalHead(item.name||id);
+  html+=`<div class="detail-view">
+    <div class="detail-top">
+      ${img(item.image,'detail-img-large')}
+      <div><h2>${safe(item.name||id)}</h2><p class="muted">${safe(({players:'人物卷宗',guworms:'蛊虫卷宗',killmoves:'杀招卷宗',guhouses:'凡蛊屋卷宗',recipes:'蛊方卷宗',sects:'势力卷宗'}[type])||'卷宗')}</p></div>
+    </div>
+    ${detailTable(type,item)}
+    <div class="toolbar">${can?'<button id="editThis">编辑</button>':'<span class="pill">只能查阅，不能编辑</span>'}</div>
+  </div>`;
+  openModal(html);
+  if(can && $('editThis')) $('editThis').onclick=()=>editForm(type,item);
+}
 
 function profileModal(){ const mine=state.players.find(p=>p.ownerUid===uid || p.name===myName); editForm('players',mine||null); }
 
