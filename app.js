@@ -134,7 +134,15 @@ function canCreateKillOrHouse(type){
   return type==='killmoves' ? mainOK : houseOK;
 }
 function setLocalAccount(id){accountId=id; localStorage.setItem('guAccountId',id)}
-async function saveMe(patch){ if(!accountId) return; await setDoc(ref('users',accountId), {...me,...patch, updatedAt:serverTimestamp()}, {merge:true}); }
+async function saveMe(patch){
+  if(!accountId) return;
+  // 重要：这里不能用 {merge:true}。Firestore 对嵌套对象会递归合并，
+  // 删除 inventory/absorbed 里的某个蛊物时，旧键会被保留下来，导致刷新后又出现。
+  // 所以保存玩家状态时使用整份玩家文档覆盖，才能真正删除嵌套键。
+  const next = {...(me||{}), ...patch, updatedAt:serverTimestamp()};
+  await setDoc(ref('users',accountId), next);
+  me = {...next, id: accountId};
+}
 function pickAptitude(){let r=Math.random()*100, acc=0; for(const a of aptitudePool){acc+=a.w; if(r<=acc) return a.n} return '丁'}
 
 async function boot(){
@@ -1038,8 +1046,14 @@ async function v85RefineTick(){
 setInterval(v85RefineTick,1000);
 
 window.destroyItem=async function(type,id){
-  if(!requireLogin())return; if(!confirm(`确定销毁 ${itemName(type,id)} ×1？此操作不可恢复。`))return;
-  const inv=myInv(); if(!v85Have(type,id))return toast('背包没有该物品'); v85Consume(inv,type,id,1); await saveMe({inventory:inv}); toast('已销毁'); render();
+  if(!requireLogin())return;
+  if(!confirm(`确定销毁 ${itemName(type,id)} ×1？此操作不可恢复。`))return;
+  const inv=JSON.parse(JSON.stringify(myInv()));
+  if(!v85Have(type,id))return toast('背包没有该物品');
+  v85Consume(inv,type,id,1);
+  await saveMe({inventory:inv});
+  toast('已销毁');
+  render();
 };
 
 // 背包增加销毁按钮。
@@ -1118,12 +1132,19 @@ window.editItem=editItem;
 
 // 5）销毁已吸收蛊虫/杀招/凡蛊屋。销毁蛊虫会自动移除五维加成、装备、本命蛊。
 window.destroyAbsorbed=async function(type,id){
-  if(!requireLogin())return; if(!isAbsorbed(type,id,me))return toast('该蛊物未被吸收');
+  if(!requireLogin())return;
+  if(!isAbsorbed(type,id,me))return toast('该蛊物未被吸收');
   if(!confirm(`确定彻底销毁已吸收的 ${itemName(type,id)}？相关效果会消失。`))return;
-  const absorbed=me.absorbed||{guworms:{},killmoves:{},guhouses:{}}; absorbed[type]||={}; delete absorbed[type][id];
+  const absorbed=JSON.parse(JSON.stringify(me.absorbed||{guworms:{},killmoves:{},guhouses:{}}));
+  absorbed[type] ||= {};
+  delete absorbed[type][id];
   const equipped=(Array.isArray(me.equipped)?me.equipped:[]).map(e=>e&&e.type===type&&e.id===id?null:e);
-  const patch={absorbed,equipped}; if(type==='guworms'&&me.bornGu===id) patch.bornGu=''; if(me.fist?.type===type&&me.fist?.id===id) patch.fist=null;
-  await saveMe(patch); toast('已销毁已吸收蛊物'); render();
+  const patch={absorbed,equipped};
+  if(type==='guworms'&&me.bornGu===id) patch.bornGu='';
+  if(me.fist?.type===type&&me.fist?.id===id) patch.fist=null;
+  await saveMe(patch);
+  toast('已销毁已吸收蛊物');
+  render();
 };
 const v86OldRenderBag=renderBag;
 renderBag=function(){
