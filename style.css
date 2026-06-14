@@ -54,3 +54,10 @@
 @keyframes lightFlash{0%{opacity:0}8%{opacity:1;background:rgba(255,255,255,.22)}35%{background:rgba(0,0,0,.48)}100%{opacity:0}}
 .manual-refine{margin-top:12px}.manual-refine .pick-grid{max-height:240px;overflow:auto}.destroy-btn{margin-top:8px}.forge-grid .pick-card,.manual-refine .pick-card{font-size:14px}.adv-admin{margin:10px 0}.detail-table td,.detail-table th{vertical-align:top}
 @media(max-width:760px){.refine-success-screen b{font-size:36px}.tribulation-strike b{font-size:24px}.manual-refine .pick-grid{grid-template-columns:1fr;max-height:190px}.pick-card{padding:8px}}
+
+/* V9 福地 / 竞技场 / 恢复属性 */
+.land-card{position:relative;overflow:hidden}
+.land-card::before{content:"";position:absolute;inset:-40%;background:radial-gradient(circle at 30% 20%,rgba(95,214,180,.18),transparent 35%),radial-gradient(circle at 80% 70%,rgba(255,213,113,.16),transparent 30%);pointer-events:none}
+.battle-log{max-height:420px;overflow:auto;background:#1b120c;color:#fff3cc;border:1px solid #bd8d33;border-radius:16px;padding:14px;line-height:1.8}
+.battle-log p{margin:.35rem 0;border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:.35rem}
+@media(max-width:760px){.battle-log{max-height:300px;font-size:14px}.land-card .toolbar{display:grid;grid-template-columns:1fr;gap:8px}}

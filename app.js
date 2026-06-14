@@ -1257,3 +1257,131 @@ setInterval(tribulationTick,500);
 
 renderRules=function(){ $('content').innerHTML=`<div class="scroll-panel"><h2>V8.6 炼蛊与渡劫修复版</h2><p>已吸收蛊虫、杀招、凡蛊屋可以销毁；销毁已吸收蛊虫会移除对应五维加成。</p><p>人物五维只由已吸收蛊虫叠加，杀招与凡蛊屋不提供永久五维。</p><p>炼蛊台支持无方炼制；若投入材料不符合任何蛊方，半途必定炸炉。炼制成功会显示“炼制成功”。</p><p>管理员可创建和编辑历练谷地图。</p><p>六转天劫改为每2秒一道雷，共10道，每道100伤害，并使用雷电图片特效。</p></div>`; };
 render();
+
+/* ===================== V9.0 福地 / 竞技场 / 恢复属性补丁 ===================== */
+// 目标：六转开启福地；增加自动战报竞技场；蛊虫新增“恢复”属性，使用时恢复生命但不超过上限。
+
+// 1) 导航与状态
+if(!navs.some(x=>x[0]==='lands')){
+  const idx = navs.findIndex(x=>x[0]==='auction');
+  navs.splice(idx>=0?idx:navs.length-2,0,["lands","福地阁","六转后开辟福地，经营资源与产出"],["arena","竞技场","自动战斗、挑战玩家、生成战报"]);
+  icons.lands="福"; icons.arena="斗";
+}
+state.lands = state.lands || [];
+state.arenaLogs = state.arenaLogs || [];
+try{ onSnapshot(col('lands'),snap=>{state.lands=snap.docs.map(d=>({id:d.id,...d.data()})); if(current==='lands') render();}); }catch(e){console.warn('lands listen failed',e)}
+try{ onSnapshot(query(col('arenaLogs'),orderBy('createdAt','desc')),snap=>{state.arenaLogs=snap.docs.map(d=>({id:d.id,...d.data()})); if(current==='arena') render();}); }catch(e){console.warn('arenaLogs listen failed',e)}
+
+// 2) 恢复属性：只有蛊虫拥有；使用一次后恢复生命，满血不恢复。
+function guRecovery(item){ return Math.max(0,n(item?.recovery ?? item?.heal ?? item?.recover ?? 0)); }
+function hpMaxOf(p=me){ return computedAttrs(p).life || 5; }
+function hpNowOf(p=me){ return n(p?.hp || hpMaxOf(p)); }
+function recoveredHpValue(item,p=me){ const rec=guRecovery(item); if(rec<=0)return 0; return Math.max(0, Math.min(hpMaxOf(p), hpNowOf(p)+rec)-hpNowOf(p)); }
+async function v90UseThingCore(type,id,slot=null){
+  if(!requireLogin())return; const item=getItem(type,id); if(!item)return toast('蛊物不存在');
+  if(['guworms','killmoves','guhouses'].includes(type) && !isAbsorbed(type,id,me)) return toast('未吸收蛊物不能使用');
+  const cost=itemUseCost(type,item); if(n(me.essence)<cost)return toast('真元不足');
+  const attrs=effectAttrs(type,item,me,true); const rec=(type==='guworms')?recoveredHpValue(item,me):0;
+  const patch={essence:n(me.essence)-cost}; if(rec>0) patch.hp=hpNowOf(me)+rec;
+  await saveMe(patch);
+  const txt=attrKeys.filter(k=>attrs[k]).map(k=>`${attrCN[k]}+${attrs[k]}`).join('，') || '无属性加成';
+  fx(`${item.name||id}：${txt}${rec>0?'，生命+'+rec:''}`);
+  if(slot!==null) setEquipCooldown(slot,secondsFrom(cooldownText(item)));
+  renderVitals();
+}
+window.useThing=function(type,id){ return v90UseThingCore(type,id,null); };
+window.useEquipped=function(slot){
+  if(!requireLogin())return; const eq=equipArray(); const e=eq[slot]; if(!e)return toast('此格为空');
+  const left=equipCooldownLeft(slot); if(left>0)return toast(`冷却中：${left}秒`);
+  return v90UseThingCore(e.type,e.id,slot);
+};
+
+// 3) 详情页与编辑页增加恢复字段，避免直接覆盖旧数据结构。
+const v90OldDetail = detail;
+detail = function(type,id){
+  const item=getItem(type,id); if(!item)return;
+  const cost=itemAbsorbCost(type,item), use=itemUseCost(type,item), attrs=effectAttrs(type,item,me,false);
+  let rows = [['名称',item.name||id],['等级',item.rank||'-'],['流派',item.path||'-'],['价格',n(item.price)+' 元石'],['吸收真元',cost],['使用真元',use]];
+  if(type==='guworms') rows.push(['恢复生命',guRecovery(item)]);
+  rows.push(['距离',rangeText(item)],['冷却时间',cooldownText(item)],['持续/定身时间',durationText(item)],['攻击',attrs.attack],['防御',attrs.defense],['生命',attrs.life],['速度',attrs.speed],['精神',attrs.spirit],['效果',item.effect||item.note||'-'],['创作者',item.creator||'-'],['状态',item.status||'approved']);
+  if(type==='killmoves') rows.splice(4,0,['杀招属性',attrCN[item.effectAttr]||'-']);
+  if(type==='killmoves'||type==='guhouses') rows.splice(4,0,['所需蛊虫',(item.guIds||[]).map(x=>itemName('guworms',x)).join('、')||'-']);
+  if(type==='recipes') rows.splice(4,0,['所需蛊虫',(item.guIds||[]).map(x=>itemName('guworms',x)).join('、')||'-'],['所需蛊材',(item.materialIds||[]).map(x=>itemName('materials',x)).join('、')||'-']);
+  openModal(`${modalHead(typeCN[type]+'卷宗')}<div class="detail-box">${img(item.image)}<table class="detail-table">${rows.map(r=>`<tr><th>${safe(r[0])}</th><td>${safe(r[1])}</td></tr>`).join('')}</table><div class="toolbar"><button onclick="window.buyItem('${type}','${id}')">购买</button>${type!=='recipes'&&type!=='materials'?`<button onclick="window.absorbItem('${type}','${id}')">吸收/炼化</button><button onclick="window.useThing('${type}','${id}')">使用</button><button onclick="window.equipThing('${type}','${id}')">装备</button>`:''}${canEditItem(item)?`<button onclick="window.editItem('${type}','${id}')">编辑</button>`:''}</div></div>`);
+};
+window.detail=detail;
+
+const v90OldEditItem = editItem;
+editItem = async function(type,id=null){
+  if(type!=='guworms') return v90OldEditItem(type,id);
+  if(!requireLogin())return; const item=id?getItem(type,id):{};
+  if(id && !canEditItem(item)) return toast('只能编辑自己创作的，管理员可编辑全部');
+  if(!id && !canMakeWorldThing(type)) return toast('三转以上才可创建蛊虫');
+  const inner=field('name','名称','text',item.name)+select('rank','等级',ranks,item.rank)+select('path','流派',paths,item.path)+field('image','图标路径','text',item.image)+field('price','价格','number',item.price)+field('absorbCost','吸收所需真元','number',item.absorbCost)+field('useCost','使用一次真元','number',item.useCost)+field('recovery','恢复生命','number',guRecovery(item))+field('range','距离','text',item.range)+field('cooldown','冷却时间/秒','text',item.cooldown)+field('duration','持续/定身时间','text',item.duration)+field('attack','攻击','number',item.attack)+field('defense','防御','number',item.defense)+field('life','生命','number',item.life)+field('speed','速度','number',item.speed)+field('spirit','精神','number',item.spirit)+field('basicName','普攻名','text',item.basicName)+field('basicDamage','普攻伤害','number',item.basicDamage)+field('basicCooldown','普攻冷却/秒','number',item.basicCooldown)+field('basicDuration','普攻持续/秒','number',item.basicDuration)+field('basicEssence','普攻真元','number',item.basicEssence)+area('effect','效果',item.effect);
+  openModal(`${modalHead((id?'编辑':'创作')+typeCN[type])}<form id="editForm" class="form"><div class="row">${inner}</div><div class="toolbar"><button>保存</button>${id&&canEditItem(item)?`<button type="button" class="danger" id="delBtn">删除</button>`:''}</div><p class="muted">恢复生命为蛊虫专属属性：每次使用蛊虫时触发，满血不会溢出。</p></form>`);
+  $('editForm').onsubmit=async e=>{e.preventDefault(); const data=Object.fromEntries(new FormData(e.target).entries()); ['price','attack','defense','life','speed','spirit','absorbCost','useCost','recovery','basicDamage','basicCooldown','basicDuration','basicEssence'].forEach(k=>{if(k in data)data[k]=Number(data[k]||0)}); data.creator=item.creator||accountId; if(!id)data.status=isAdmin()?'approved':'pending'; await setDoc(id?ref(type,id):doc(col(type)),{...item,...data,updatedAt:serverTimestamp()},{merge:true}); closeModal(); toast('已保存');};
+  if($('delBtn')) $('delBtn').onclick=async()=>{if(confirm('确定删除？')){await deleteDoc(ref(type,id)); closeModal(); toast('已删除');}};
+};
+window.editItem=editItem;
+
+// 4) 福地系统：六转后开辟，定时产出元石/蛊材/修为。
+function canOpenLand(){ return isAdmin() || rankNum(realmRank(me?.realm))>=6; }
+function ownedLand(){ return (state.lands||[]).find(x=>x.owner===accountId); }
+function landRankBonus(p=me){ const r=rankNum(realmRank(p?.realm)); return Math.max(1,r-5); }
+function landProduce(l){ const b=landRankBonus(me); return {stones:200*b*n(l.level||1), cultivation:30*b*n(l.level||1), materialCount:Math.max(1,b)}; }
+window.createLand=async function(){
+  if(!requireLogin())return; if(!canOpenLand())return toast('六转后才可开辟福地'); if(ownedLand())return toast('你已经拥有福地');
+  const name=prompt('福地名称','青玉福地'); if(!name)return;
+  await addDoc(col('lands'),{name,owner:accountId,path:me.mainPath||'气道',level:1,createdAt:serverTimestamp(),nextClaimAt:Date.now(),note:'初开福地，灵机初生。'});
+  toast('福地开辟成功');
+};
+window.claimLand=async function(id){
+  if(!requireLogin())return; const l=(state.lands||[]).find(x=>x.id===id); if(!l||l.owner!==accountId&&!isAdmin())return toast('不可领取');
+  if(Date.now()<n(l.nextClaimAt))return toast('福地还在孕育资源');
+  const prod=landProduce(l); const inv=myInv(); let matId=state.materials.find(m=>m.name==='福地灵壤')?.id;
+  if(!matId){ const d=await addDoc(col('materials'),{name:'福地灵壤',rank:'六转',price:200,effect:'福地产出的基础仙材',status:'approved',creator:'system'}); matId=d.id; }
+  v85Add(inv,'materials',matId,prod.materialCount);
+  await saveMe({stones:n(me.stones)+prod.stones,cultivation:n(me.cultivation)+prod.cultivation,inventory:inv});
+  await setDoc(ref('lands',id),{nextClaimAt:Date.now()+8*60*60*1000,lastClaimAt:Date.now()},{merge:true});
+  fx(`福地产出：元石+${prod.stones}，修为+${prod.cultivation}，福地灵壤×${prod.materialCount}`);
+};
+window.upgradeLand=async function(id){
+  if(!requireLogin())return; const l=(state.lands||[]).find(x=>x.id===id); if(!l||l.owner!==accountId&&!isAdmin())return;
+  const cost=1000*n(l.level||1); if(n(me.stones)<cost)return toast('元石不足');
+  await saveMe({stones:n(me.stones)-cost}); await setDoc(ref('lands',id),{level:n(l.level||1)+1,updatedAt:serverTimestamp()},{merge:true}); toast('福地升级成功');
+};
+function landCard(l){ const own=l.owner===accountId; const left=Math.max(0,Math.ceil((n(l.nextClaimAt)-Date.now())/1000)); const prod=landProduce(l); return `<div class="card land-card"><h3>${safe(l.name||l.id)}</h3><span class="pill">${safe(l.path||'无流派')}</span><span class="pill">等级 ${n(l.level||1)}</span><p>主人：${safe(l.owner||'未知')}</p><p class="muted">每次产出：元石+${prod.stones}｜修为+${prod.cultivation}｜福地灵壤×${prod.materialCount}</p><p>${left>0?'下次产出：'+left+'秒':'资源可领取'}</p>${own||isAdmin()?`<div class="toolbar"><button ${left>0?'disabled':''} onclick="window.claimLand('${l.id}')">领取产出</button><button onclick="window.upgradeLand('${l.id}')">升级福地</button></div>`:''}</div>`; }
+function renderLands(){
+  if(!requireLogin())return; const mine=ownedLand();
+  $('content').innerHTML=`<div class="scroll-panel"><h2>福地阁</h2><p>六转蛊仙可开辟福地。福地定时产出元石、修为和仙材，是蛊仙阶段的长期产业。</p><div class="toolbar"><button onclick="window.createLand()">开辟福地</button></div>${!canOpenLand()?'<p class="muted">未到六转，只能参观福地。</p>':''}</div><h2 class="section-title">我的福地</h2><div class="grid">${mine?landCard(mine):'<div class="card muted">尚未开辟福地。</div>'}</div><h2 class="section-title">天下福地</h2><div class="grid">${(state.lands||[]).map(landCard).join('')||empty()}</div>`;
+}
+
+// 5) 竞技场：自动计算战报，方便玩家开始竞争。
+function battlePowerOf(p){ const a=computedAttrs(p); return a.attack*2+a.defense*1.5+a.life+a.speed+a.spirit; }
+function simulateBattle(a,b){
+  let A={id:a.id,name:a.name||a.id, hp:hpMaxOf(a), attrs:computedAttrs(a)}; let B={id:b.id,name:b.name||b.id, hp:hpMaxOf(b), attrs:computedAttrs(b)}; const logs=[];
+  for(let round=1; round<=30 && A.hp>0 && B.hp>0; round++){
+    const first=A.attrs.speed>=B.attrs.speed?A:B, second=first===A?B:A;
+    const hit=(x,y)=>{ const dmg=Math.max(0.25, +(x.attrs.attack - y.attrs.defense*0.35).toFixed(2)); y.hp=+(y.hp-dmg).toFixed(2); logs.push(`第${round}息：${x.name} 攻击 ${y.name}，造成 ${dmg} 伤害，${y.name}余血 ${Math.max(0,y.hp)}`); };
+    hit(first,second); if(second.hp<=0)break; hit(second,first);
+  }
+  const winner=A.hp===B.hp?(battlePowerOf(a)>=battlePowerOf(b)?a:b):(A.hp>B.hp?a:b); return {winner:winner.id,logs,A,B};
+}
+window.challengeUser=async function(id){
+  if(!requireLogin())return; if(id===accountId)return toast('不能挑战自己'); const target=state.users.find(u=>u.id===id); if(!target)return toast('没有这个玩家');
+  const result=simulateBattle(me,target); const win=result.winner===accountId; const reward=win?50:10;
+  const myPatch={stones:n(me.stones)+reward}; if(win) myPatch.wins=n(me.wins)+1; await saveMe(myPatch);
+  if(win) await setDoc(ref('users',id),{...target,losses:n(target.losses)+1,updatedAt:serverTimestamp()},{merge:true});
+  await addDoc(col('arenaLogs'),{from:accountId,to:id,winner:result.winner,logs:result.logs,createdAt:serverTimestamp()});
+  openModal(`${modalHead('竞技战报')}<p>${win?'胜利，元石+50':'落败，安慰元石+10'}</p><div class="battle-log">${result.logs.map(x=>`<p>${safe(x)}</p>`).join('')}</div>`);
+};
+function renderArena(q=''){
+  if(!requireLogin())return; const players=filter(state.users.filter(u=>u.id!==accountId),q);
+  $('content').innerHTML=`<div class="scroll-panel"><h2>竞技场</h2><p>自动战斗根据生命、攻击、防御、速度、精神生成战报。胜利获得胜场与元石。</p></div><div class="grid">${players.map(p=>`<div class="card"><h3>${safe(p.name||p.id)}</h3><span class="pill">${safe(p.realm||'一转初期')}</span><p>战力：${Math.round(battlePowerOf(p))}</p><button onclick="window.challengeUser('${safe(p.id)}')">挑战</button></div>`).join('')||empty()}</div><h2 class="section-title">最近战报</h2><div class="grid">${(state.arenaLogs||[]).slice(0,8).map(l=>`<div class="card"><h3>${safe(l.from)} VS ${safe(l.to)}</h3><p>胜者：${safe(l.winner)}</p><button onclick='openModal(${JSON.stringify(modalHead('战报')+`<div class="battle-log">${(l.logs||[]).map(x=>`<p>${safe(x)}</p>`).join('')}</div>`)})'>查看</button></div>`).join('')||empty()}</div>`;
+}
+
+// 6) 渲染入口与规则
+const v90OldRender = render;
+render=function(){ const q=($('globalSearch')?.value||'').trim(); if(current==='lands') renderLands(); else if(current==='arena') renderArena(q); else v90OldRender(); renderVitals(); };
+renderRules=function(){ $('content').innerHTML=`<div class="scroll-panel"><h2>V9 福地与竞技场</h2><p>六转后可开辟福地，福地定时产出元石、修为与仙材。</p><p>新增竞技场，玩家可挑战其他玩家，系统自动生成战报。</p><p>蛊虫新增恢复属性：使用蛊虫时恢复生命，满血不会溢出。</p><p>拍卖行、炼蛊台、历练谷、闭关洞继续保留。</p></div>`; };
+try{ initNav(); render(); }catch(e){ console.warn('V9 render refresh failed',e); }
