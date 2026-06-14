@@ -384,4 +384,98 @@ renderChat=function(){ const ch=window.chatChannel||'world'; const friends=(me?.
 // 规则页补充。
 renderRules=function(){ $('content').innerHTML=`<div class="scroll-panel"><h2>V7.4核心规则</h2><p>属性显示不再被跨流派直接除二；只有使用跨流派蛊物时效果减半，且+1不会变0。</p><p>未吸收蛊物不能装备；同一蛊物不能同时占多个快捷格。装备栏默认显示5格，可打开0-9十格弹窗。</p><p>三转以上可创建蛊虫、蛊方、势力；任意流派大师可创杀招，任意流派宗师可创凡蛊屋。</p><p>交易坊支持元石与背包物品交换；传音阁支持公共、群聊、私信、好友。</p></div>`; };
 
+
+
+/* ===================== V8 历练谷 / 闭关洞 / 拍卖行：成长循环核心版 ===================== */
+if(!navs.some(x=>x[0]==='adventure')){
+  const idx = navs.findIndex(x=>x[0]==='rankings');
+  navs.splice(idx,0,["adventure","历练谷","地图历练，获得元石、蛊材与蛊虫"],["cultivate","闭关洞","消耗资源修炼并突破小境界"],["auction","拍卖行","离线挂售背包蛊物，自动成交"]);
+  icons.adventure="历"; icons.cultivate="修"; icons.auction="拍";
+}
+state.auctions = state.auctions || [];
+const adventureAreas = [
+  {id:'bamboo',name:'青竹林',rank:'一转',cost:5,time:10,stones:[10,30],materials:['青竹叶','竹露','青竹根'],guChance:18,desc:'适合一转蛊师历练，产出基础木道、风道蛊材。'},
+  {id:'wolf',name:'野狼山',rank:'二转',cost:15,time:20,stones:[30,80],materials:['狼牙','狼血','风狼皮'],guChance:15,desc:'山势险峻，常有狼群游荡。'},
+  {id:'bone',name:'白骨洞',rank:'三转',cost:35,time:30,stones:[80,180],materials:['白骨粉','阴骨枝','骨纹石'],guChance:12,desc:'白骨堆积之地，魂道与骨道资源较多。'},
+  {id:'blood',name:'血河谷',rank:'四转',cost:80,time:45,stones:[180,420],materials:['血河砂','赤血石','血纹花'],guChance:9,desc:'血气浓重，风险更高，收益也更高。'},
+  {id:'beast',name:'万兽山',rank:'五转',cost:180,time:60,stones:[420,1000],materials:['兽王骨','万兽精血','荒兽鳞'],guChance:6,desc:'五转蛊师才适合深入，掉落高阶资源。'}
+];
+function randInt(a,b){return Math.floor(Math.random()*(b-a+1))+a}
+function canEnterRank(rank){return isAdmin() || rankNum(realmRank(me?.realm))>=rankNum(rank)}
+function addInv(inv,type,id,count=1){inv[type] ||= {}; inv[type][id] ||= {count:0}; inv[type][id].count += count; return inv;}
+function nextRealmName(realm){
+  const r=realmRank(realm), m=minorIndex(realm), ri=ranks.indexOf(r);
+  if(m<3) return r + minorRealms[m+1];
+  if(ri>=0 && ri<ranks.length-1) return ranks[ri+1] + '初期';
+  return realm;
+}
+function cultivationNeed(p=me){const r=rankNum(realmRank(p?.realm)); const m=minorIndex(p?.realm)+1; return r*300 + m*150;}
+function breakthroughCost(p=me){const r=rankNum(realmRank(p?.realm)); return {stones:r*120, essence:Math.ceil(maxEssence(p)*0.35)};}
+function staticMaterialObj(name){return {id:name,name,rank:'凡品',price:10,effect:'历练所得蛊材'};}
+const oldSubscribeAllV8 = subscribeAll;
+subscribeAll = function(){
+  if(unsubbed) return; unsubbed=true;
+  ['users','players','guworms','killmoves','guhouses','recipes','materials','trades','sects','auctions'].forEach(name=>onSnapshot(col(name),snap=>{state[name]=snap.docs.map(d=>({id:d.id,...d.data()})); if(name==='users') me = state.users.find(u=>u.id===accountId)||null; renderUser(); render();}));
+  onSnapshot(query(col('messages'),orderBy('createdAt','asc')),snap=>{state.messages=snap.docs.map(d=>({id:d.id,...d.data()})); if(current==='chat') render();});
+};
+const oldRenderV8 = render;
+render = function(){
+  const q=($('globalSearch')?.value||'').trim();
+  if(current==='adventure') renderAdventure();
+  else if(current==='cultivate') renderCultivate();
+  else if(current==='auction') renderAuction(q);
+  else oldRenderV8();
+  renderVitals();
+};
+function renderAdventure(){
+  if(!requireLogin())return;
+  $('content').innerHTML=`<div class="scroll-panel"><h2>历练谷</h2><p>历练消耗真元，获得元石、蛊材，并有概率获得同阶蛊虫。适合让玩家每天有事可做。</p></div><div class="grid adventure-grid">${adventureAreas.map((a,i)=>`<div class="card adventure-card"><h3>${safe(a.name)}</h3><span class="pill">推荐 ${safe(a.rank)}</span><span class="pill">消耗 ${n(a.cost)} 真元</span><p>${safe(a.desc)}</p><p class="muted">奖励：元石 ${a.stones[0]}~${a.stones[1]}｜蛊材×1~3｜蛊虫概率 ${a.guChance}%</p><button ${canEnterRank(a.rank)?'':'disabled'} onclick="window.startAdventure(${i})">开始历练</button></div>`).join('')}</div>`;
+}
+window.startAdventure=async function(i){
+  if(!requireLogin())return; const a=adventureAreas[i]; if(!a)return;
+  if(!canEnterRank(a.rank))return toast('境界不足，无法进入');
+  if(n(me.essence)<a.cost)return toast('真元不足');
+  const inv=myInv(); const stones=randInt(a.stones[0],a.stones[1]); const mat=a.materials[randInt(0,a.materials.length-1)]; const matCount=randInt(1,3); addInv(inv,'materials',mat,matCount);
+  let guText='';
+  const pool=approved(state.guworms).filter(g=>itemRank(g)===a.rank);
+  if(pool.length && randInt(1,100)<=a.guChance){const g=pool[randInt(0,pool.length-1)]; addInv(inv,'guworms',g.id,1); guText=`，获得蛊虫：${g.name||g.id}×1`;}
+  await saveMe({essence:n(me.essence)-a.cost, stones:n(me.stones)+stones, inventory:inv, adventureCount:n(me.adventureCount)+1, cultivation:n(me.cultivation)+Math.ceil(stones/3)});
+  fx(`历练完成：元石+${stones}，${mat}×${matCount}${guText}`);
+};
+function renderCultivate(){
+  if(!requireLogin())return; const cur=n(me.cultivation), need=cultivationNeed(me), cost=breakthroughCost(me), next=nextRealmName(me.realm);
+  $('content').innerHTML=`<div class="scroll-panel"><h2>闭关洞</h2><p>当前境界：<b>${safe(me.realm)}</b> → 下一境界：<b>${safe(next)}</b></p><p>修为：${cur}/${need}</p><div class="progress"><i style="width:${Math.min(100,cur/need*100)}%"></i></div><p class="muted">闭关可消耗元石获得修为；历练也会少量增加修为。</p><div class="toolbar"><button onclick="window.cultivateOnce(50)">闭关一次：50元石 → 修为+80</button><button onclick="window.cultivateOnce(200)">闭关四时辰：200元石 → 修为+360</button><button onclick="window.breakthrough()">尝试突破</button></div><p>突破消耗：元石 ${cost.stones}，真元 ${cost.essence}</p></div>`;
+}
+window.cultivateOnce=async function(stones){
+  if(!requireLogin())return; if(n(me.stones)<stones)return toast('元石不足'); const gain=stones===50?80:360; await saveMe({stones:n(me.stones)-stones,cultivation:n(me.cultivation)+gain}); toast(`闭关完成，修为+${gain}`);
+};
+window.breakthrough=async function(){
+  if(!requireLogin())return; const need=cultivationNeed(me), cost=breakthroughCost(me), next=nextRealmName(me.realm);
+  if(next===me.realm)return toast('已至当前最高境界');
+  if(n(me.cultivation)<need)return toast('修为不足');
+  if(n(me.stones)<cost.stones)return toast('元石不足');
+  if(n(me.essence)<cost.essence)return toast('真元不足');
+  const newMax=Math.floor((baseEssence[realmRank(next)]||60)*(aptPct[me.aptitude]||0.45));
+  await saveMe({realm:next,cultivation:n(me.cultivation)-need,stones:n(me.stones)-cost.stones,essence:Math.min(newMax,n(me.essence)-cost.essence+Math.ceil(newMax*0.4))});
+  fx(`突破成功：${next}`);
+};
+function renderAuction(q=''){
+  if(!requireLogin())return; const arr=filter((state.auctions||[]).filter(a=>a.status!=='sold'&&a.status!=='cancelled'),q);
+  $('content').innerHTML=`<div class="toolbar"><button onclick="window.createAuction()">挂售背包蛊物</button></div><div class="grid">${arr.map(a=>`<div class="card"><h3>${safe(a.name||itemName(a.type,a.itemId))}</h3><span class="pill">${safe(typeCN[a.type]||a.type)}</span><span class="pill">价格 ${n(a.price)} 元石</span><p>卖家：${safe(a.seller)}</p><p class="muted">数量：${n(a.count||1)}</p><div class="toolbar">${a.seller===accountId?`<button onclick="window.cancelAuction('${a.id}')">下架</button>`:`<button onclick="window.buyAuction('${a.id}')">购买</button>`}</div></div>`).join('')||empty()}</div>`;
+}
+window.createAuction=function(){
+  if(!requireLogin())return; const opts=['guworms','killmoves','guhouses','recipes','materials'].map(type=>Object.entries(myInv()[type]||{}).filter(([id,v])=>n(v.count)>0).map(([id,v])=>`<option value="${safe(type+':'+id)}">${safe(typeCN[type]+'｜'+itemName(type,id)+' ×'+n(v.count))}</option>`).join('')).join('');
+  openModal(`${modalHead('拍卖行挂售')}<div class="form"><label>选择物品<select id="auctionItem">${opts}</select></label><label>数量<input id="auctionCount" type="number" value="1"></label><label>价格<input id="auctionPrice" type="number" value="100"></label><button id="auctionSubmit">挂售</button></div>`);
+  $('auctionSubmit').onclick=async()=>{const val=$('auctionItem').value; if(!val)return toast('没有可挂售物品'); const [type,id]=val.split(':'); const count=Math.max(1,n($('auctionCount').value)); const price=Math.max(1,n($('auctionPrice').value)); const inv=myInv(); if(n(inv[type]?.[id]?.count)<count)return toast('数量不足'); inv[type][id].count-=count; if(inv[type][id].count<=0)delete inv[type][id]; await saveMe({inventory:inv}); await addDoc(col('auctions'),{seller:accountId,type,itemId:id,count,price,name:itemName(type,id),status:'active',createdAt:serverTimestamp()}); closeModal(); toast('已挂售');};
+};
+window.cancelAuction=async function(id){
+  if(!requireLogin())return; const a=state.auctions.find(x=>x.id===id); if(!a||a.seller!==accountId)return; const inv=myInv(); addInv(inv,a.type,a.itemId,n(a.count||1)); await saveMe({inventory:inv}); await setDoc(ref('auctions',id),{status:'cancelled'},{merge:true}); toast('已下架并退回背包');
+};
+window.buyAuction=async function(id){
+  if(!requireLogin())return; const a=state.auctions.find(x=>x.id===id); if(!a||a.status!=='active')return toast('拍卖不存在'); if(a.seller===accountId)return toast('不能购买自己的物品'); if(n(me.stones)<n(a.price))return toast('元石不足');
+  const sellerDoc=await getDoc(ref('users',a.seller)); if(!sellerDoc.exists())return toast('卖家不存在'); const seller={id:a.seller,...sellerDoc.data()};
+  const inv=myInv(); addInv(inv,a.type,a.itemId,n(a.count||1)); await saveMe({stones:n(me.stones)-n(a.price),inventory:inv}); await setDoc(ref('users',a.seller),{...seller,stones:n(seller.stones)+n(a.price),updatedAt:serverTimestamp()},{merge:true}); await setDoc(ref('auctions',id),{status:'sold',buyer:accountId,soldAt:serverTimestamp()},{merge:true}); toast('购买成功，物品已入乾坤袋');
+};
+renderRules=function(){ $('content').innerHTML=`<div class="scroll-panel"><h2>V8 成长循环版</h2><p>新增历练谷：消耗真元，获得元石、蛊材，并有概率获得同阶蛊虫。</p><p>新增闭关洞：消耗元石获得修为，修为足够后可自动突破小境界。</p><p>新增拍卖行：玩家可离线挂售背包蛊物，买家支付元石后自动转入背包。</p><p>原有规则：同阶及低阶可吸收；未吸收不可装备；跨流派使用效果减半；三转以上可创建蛊虫、蛊方、势力。</p></div>`; };
+
 boot();
