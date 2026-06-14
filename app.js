@@ -1685,3 +1685,147 @@ renderArena=function(q=''){
 };
 
 try{ initNav(); render(); }catch(e){ console.warn('V9.2 refresh failed',e); }
+
+/* ===================== V9.3 斗蛊台/历练战斗重制：拳法普攻、NPC反击、历练副本 ===================== */
+const V93 = { npcTimer:null, advTimer:null };
+function v93RankNumFromText(rank){return rankNum(rank||'一转')||1;}
+function v93Fist(){ return (typeof v84CurrentFist==='function') ? v84CurrentFist() : {name:'基础拳法',damage:0.25,cooldown:1,essence:0}; }
+function v93FistCdKey(scope){return `gu_v93_fist_${accountId}_${scope}`;}
+function v93FistLeft(scope){return Math.max(0,Math.ceil((n(localStorage.getItem(v93FistCdKey(scope)))-Date.now())/1000));}
+function v93SetFistCd(scope,sec){localStorage.setItem(v93FistCdKey(scope),String(Date.now()+Math.max(1,n(sec)||1)*1000));}
+function v93PlayerHpMax(p=me){return (typeof v91MaxHp==='function')?v91MaxHp(p):(computedAttrs(p).life||5);}
+async function v93DamageMe(dmg,label='敌方攻击'){
+  if(!me)return false;
+  const hpMax=v93PlayerHpMax(me); const hpNow=n(me.hp||hpMax); const hp=Math.max(0,Number((hpNow-dmg).toFixed(2)));
+  await saveMe({hp});
+  fx(`${label}：-${dmg}`);
+  if(hp<=0){
+    await saveMe({deadUntil:Date.now()+30000});
+    fx('失败！你已死亡');
+    return true;
+  }
+  return false;
+}
+function v93NpcByRank(rank='一转',idx=0){
+  const r=v93RankNumFromText(rank); const names=['青牙狼','赤羽蛇','黑甲猿','雷角兽','白骨妖','血眼狐','风镰螳'];
+  return {id:'npc_'+Date.now()+'_'+idx,name:names[idx%names.length],rank,hp:20*r+idx*5,maxHp:20*r+idx*5,attack:Math.max(1,r*2+idx),defense:r+idx,gu:{name:['风刃蛊','血牙蛊','雷击蛊','火弹蛊'][idx%4],damage:Math.max(2,r*4+idx*2),cooldown:3+idx%3,essence:0},lastHit:0,lastGu:0,dead:false};
+}
+function v93NpcActOnBeast(){
+  const b=window.v91Beast; if(!b||b.hp<=0||b.done)return;
+  const now=Date.now();
+  if(!b.lastNpcHit)b.lastNpcHit=0; if(!b.lastNpcGu)b.lastNpcGu=0;
+  let dmg=0,label='';
+  if(now-b.lastNpcGu>5000 && b.gu){dmg=n(b.gu.damage||b.attack*2); label=b.name+' 使用【'+b.gu.name+'】'; b.lastNpcGu=now;}
+  else if(now-b.lastNpcHit>2000){dmg=n(b.attack||1); label=b.name+' 普攻'; b.lastNpcHit=now;}
+  if(dmg>0){ b.logs.unshift(`${label}，你受到 ${dmg} 伤害`); v93DamageMe(dmg,label).then(dead=>{ if(dead){b.done=true;b.logs.unshift('失败！你被击败。'); renderArena();} }); }
+}
+function v93StartNpcLoop(){ if(V93.npcTimer)clearInterval(V93.npcTimer); V93.npcTimer=setInterval(()=>{ if(current==='arena'&&window.v91Beast){v93NpcActOnBeast(); renderArena();}},1000);}
+
+// 斗蛊玩家战：普攻改为当前拳法，而不是固定0.25。
+window.duelBasicAttack = async function(roomId){ await window.duelUse(roomId,'fist','fist',-1); };
+const v93OldDuelUse = window.duelUse;
+window.duelUse = async function(roomId,type,id,slot){
+  if(type!=='fist') return v93OldDuelUse(roomId,type,id,slot);
+  if(!requireLogin())return;
+  let r=(typeof v91DuelRoom==='function')?v91DuelRoom(roomId):null;
+  try{const d=await getDoc(ref('duelRooms',roomId)); if(d.exists())r={id:roomId,...d.data()};}catch(e){}
+  if(!r||r.status!=='active')return toast('斗蛊房间不可用');
+  if(typeof v92RoomStartLeft==='function' && v92RoomStartLeft(r)>0)return toast(`倒计时中：${v92RoomStartLeft(r)}秒`);
+  if(!(r.players||[]).includes(accountId))return toast('你不在此斗蛊中');
+  const fist=v93Fist(); const left=v93FistLeft(roomId); if(left>0)return toast(`普攻冷却：${left}秒`);
+  if(n(me.essence)<n(fist.essence))return toast('真元不足');
+  if(n(fist.essence)>0)await saveMe({essence:n(me.essence)-n(fist.essence)});
+  v93SetFistCd(roomId,n(fist.cooldown)||1);
+  const enemy=(r.players||[]).find(x=>x!==accountId); const hp={...(r.hp||{})}; const dmg=Number((n(fist.damage)||0.25).toFixed(2));
+  hp[enemy]=Math.max(0,Number((n(hp[enemy])-dmg).toFixed(2)));
+  const logs=[...(r.logs||[])]; logs.unshift(`${v91PlayerName(accountId)} 使用拳法【${fist.name}】，造成 ${dmg} 伤害`);
+  const patch={hp,logs:logs.slice(0,100),updatedAt:serverTimestamp()};
+  if(hp[enemy]<=0){
+    const defender=state.users.find(u=>u.id===enemy); const reward=(typeof v92VictoryRewardText==='function')?v92VictoryRewardText(defender):{stones:20,merit:1};
+    patch.status='finished'; patch.winner=accountId; patch.finishedAt=serverTimestamp(); patch.reward={winner:accountId,stones:reward.stones,merit:reward.merit};
+    patch.logs.unshift(`胜利！${v91PlayerName(accountId)} 获得元石 ${reward.stones}，击杀 +1。`);
+    if(typeof v91SetPairCooldown==='function')await v91SetPairCooldown(r.pair||v91PairKey(accountId,enemy));
+    await saveMe({wins:n(me.wins)+1,kills:n(me.kills)+1,stones:n(me.stones)+reward.stones,merit:n(me.merit)+reward.merit});
+    fx(`胜利！元石+${reward.stones}`);
+  }else fx(`${fist.name}：-${dmg}`);
+  await setDoc(ref('duelRooms',roomId),patch,{merge:true});
+};
+
+// 重画斗蛊房间：显示当前拳法名/伤害。
+if(typeof v91RenderRoom==='function'){
+  v91RenderRoom = function(r){
+    const enemy=(r.players||[]).find(x=>x!==accountId); const myHp=n(r.hp?.[accountId]), enemyHp=n(r.hp?.[enemy]); const myMax=n(r.maxHp?.[accountId]||1), enemyMax=n(r.maxHp?.[enemy]||1);
+    const eq=(typeof v91EquipList==='function')?v91EquipList():equipArray(); const fist=v93Fist(); const fleft=v93FistLeft(r.id);
+    const skills=eq.map((e,i)=>{ if(!e)return `<div class="duel-skill empty"><b>${i}</b><span>空</span></div>`; const item=getItem(e.type,e.id); const left=(typeof v91SkillLeft==='function')?v91SkillLeft(r.id,i):0; return `<div class="duel-skill"><b>${i}</b>${img(item?.image)}<span>${safe(itemName(e.type,e.id)).slice(0,5)}</span><em>${safe((typeof topAttrText==='function')?topAttrText(e.type,item,me,true):'')}</em><button onclick="window.duelUse('${r.id}','${e.type}','${e.id}',${i})">${left>0?left+'秒':'使用'}</button></div>`; }).join('');
+    return `<div class="duel-page enhanced-duel">${(typeof v92CountdownBanner==='function')?v92CountdownBanner(r):''}${(typeof v92VictoryBanner==='function')?v92VictoryBanner(r):''}<div class="duel-top"><button onclick="window.leaveDuelRoom()">返回斗蛊台</button><span class="pill">${r.status==='active'?'斗蛊中':'已结束'}</span></div><div class="duel-vs"><div class="fighter enemy"><h3>${safe(v91PlayerName(enemy))}</h3><div class="bar hpbar"><i style="width:${Math.max(0,Math.min(100,enemyHp/enemyMax*100))}%"></i></div><p>生命 ${enemyHp}/${enemyMax}</p></div><div class="vs-mark pulse-vs">VS</div><div class="fighter self"><h3>${safe(v91PlayerName(accountId))}</h3><div class="bar hpbar"><i style="width:${Math.max(0,Math.min(100,myHp/myMax*100))}%"></i></div><p>生命 ${myHp}/${myMax}</p><button class="basic-hit-btn" onclick="window.duelBasicAttack('${r.id}')">${safe(fist.name)} ${n(fist.damage)||0.25}${fleft>0?'｜'+fleft+'秒':''}</button><button onclick="window.openFistLibrary()">切换拳法</button></div></div><h3>装备蛊物</h3><div class="duel-skills">${skills}</div><h3>战斗记录</h3><div class="battle-log duel-log">${(r.logs||[]).map(x=>`<p>${safe(x)}</p>`).join('')}</div></div>`;
+  };
+}
+
+// 野兽战：对方会普攻和使用蛊；死亡算失败。
+const v93OldStartBeastFight=window.startBeastFight;
+window.startBeastFight=function(beastId){
+  if(!requireLogin())return; const list=(typeof v91BeastList==='function')?v91BeastList():[]; const b=list.find(x=>x.id===beastId); if(!b)return;
+  const r=v93RankNumFromText(b.rank||'一转');
+  window.v91Beast={...b,hp:b.hp,maxHp:b.hp,attack:n(b.attack)||r*2,defense:n(b.defense)||r,gu:{name:b.guName||'野性蛊击',damage:r*5,cooldown:5},logs:[`遭遇 ${b.name}`],lastNpcHit:0,lastNpcGu:0};
+  v93StartNpcLoop(); renderArena();
+};
+window.beastBasic=async function(){ await window.beastUse('fist','fist',-1); };
+const v93OldBeastUse=window.beastUse;
+window.beastUse=async function(type,id,slot){
+  const b=window.v91Beast; if(!b||b.hp<=0)return toast('没有可攻击目标');
+  if(type!=='fist')return v93OldBeastUse(type,id,slot);
+  const fist=v93Fist(); const left=v93FistLeft('beast'); if(left>0)return toast(`普攻冷却：${left}秒`);
+  if(n(me.essence)<n(fist.essence))return toast('真元不足');
+  if(n(fist.essence)>0)await saveMe({essence:n(me.essence)-n(fist.essence)});
+  v93SetFistCd('beast',n(fist.cooldown)||1);
+  const dmg=Number((n(fist.damage)||0.25).toFixed(2)); b.hp=Math.max(0,Number((b.hp-dmg).toFixed(2))); b.logs.unshift(`${me.name||accountId} 使用拳法【${fist.name}】，造成 ${dmg} 伤害`);
+  if(b.hp<=0&&!b.done){b.done=true; const reward=n(b.reward)||20; b.logs.unshift(`胜利！获得元石 ${reward}，击杀 +1`); await saveMe({stones:n(me.stones)+reward,wins:n(me.wins)+1,kills:n(me.kills)+1}); fx(`胜利！元石+${reward}`);} else fx(`-${dmg}`);
+  renderArena();
+};
+if(typeof v91RenderBeast==='function'){
+  v91RenderBeast=function(){
+    const b=window.v91Beast; if(!b)return ''; const eq=(typeof v91EquipList==='function')?v91EquipList():equipArray(); const fist=v93Fist(); const fleft=v93FistLeft('beast');
+    const skills=eq.map((e,i)=>{if(!e)return `<div class="duel-skill empty"><b>${i}</b><span>空</span></div>`; const item=getItem(e.type,e.id); const left=(typeof v91SkillLeft==='function')?v91SkillLeft('beast',i):0; return `<div class="duel-skill"><b>${i}</b>${img(item?.image)}<span>${safe(itemName(e.type,e.id)).slice(0,5)}</span><button onclick="window.beastUse('${e.type}','${e.id}',${i})">${left>0?left+'秒':'使用'}</button></div>`}).join('');
+    return `<div class="duel-page npc-duel"><div class="duel-top"><button onclick="window.v91Beast=null;renderArena()">退出野战</button><span class="pill">NPC会普攻与蛊击</span></div><div class="fighter enemy"><h3>${safe(b.name)}</h3><div class="bar hpbar"><i style="width:${Math.max(0,Math.min(100,b.hp/b.maxHp*100))}%"></i></div><p>生命 ${b.hp}/${b.maxHp}｜攻击 ${n(b.attack)}｜防御 ${n(b.defense)}</p></div><div class="toolbar"><button class="basic-hit-btn" onclick="window.beastBasic()">${safe(fist.name)} ${n(fist.damage)||0.25}${fleft>0?'｜'+fleft+'秒':''}</button><button onclick="window.openFistLibrary()">切换拳法</button></div><div class="duel-skills">${skills}</div><div class="battle-log duel-log">${(b.logs||[]).map(x=>`<p>${safe(x)}</p>`).join('')}</div></div>`;
+  };
+}
+
+// 历练谷副本化：进入地图后生成多名NPC，全部击败才结算奖励。
+function v93AdventureNpcs(area){const r=v93RankNumFromText(area.rank); const count=Math.min(6,Math.max(2,r+2)); return Array.from({length:count},(_,i)=>v93NpcByRank(area.rank,i));}
+function v93ActiveNpc(){const b=window.v93AdventureBattle; return b?.npcs?.find(x=>!x.dead&&x.hp>0);}
+function v93AdventureLoop(){
+  const b=window.v93AdventureBattle; const npc=v93ActiveNpc(); if(!b||!npc||b.done)return;
+  const now=Date.now(); let dmg=0,label='';
+  if(now-npc.lastGu>5000){dmg=n(npc.gu?.damage)||5;label=npc.name+' 使用【'+(npc.gu?.name||'蛊击')+'】';npc.lastGu=now;}
+  else if(now-npc.lastHit>2000){dmg=n(npc.attack)||1;label=npc.name+' 普攻';npc.lastHit=now;}
+  if(dmg>0){b.logs.unshift(`${label}，你受到 ${dmg} 伤害`); v93DamageMe(dmg,label).then(dead=>{if(dead){b.done=true;b.failed=true;b.logs.unshift('历练失败！你被击败。'); renderAdventureBattle();}});}
+}
+function v93StartAdventureLoop(){ if(V93.advTimer)clearInterval(V93.advTimer); V93.advTimer=setInterval(()=>{ if(window.v93AdventureBattle&&!window.v93AdventureBattle.done){v93AdventureLoop(); if(current==='adventure')renderAdventureBattle();}},1000);}
+function renderAdventureBattle(){
+  const b=window.v93AdventureBattle; if(!b){renderAdventure();return;} const npc=v93ActiveNpc(); const fist=v93Fist(); const fleft=v93FistLeft('adventure'); const eq=(typeof v91EquipList==='function')?v91EquipList():equipArray();
+  const npcList=b.npcs.map((x,i)=>`<div class="npc-chip ${x.dead||x.hp<=0?'dead':''}"><b>${safe(x.name)}</b><span>${Math.max(0,x.hp)}/${x.maxHp}</span></div>`).join('');
+  const skills=eq.map((e,i)=>{if(!e)return `<div class="duel-skill empty"><b>${i}</b><span>空</span></div>`; const item=getItem(e.type,e.id); const left=(typeof v91SkillLeft==='function')?v91SkillLeft('adventure',i):0; return `<div class="duel-skill"><b>${i}</b>${img(item?.image)}<span>${safe(itemName(e.type,e.id)).slice(0,5)}</span><button onclick="window.adventureUse('${e.type}','${e.id}',${i})">${left>0?left+'秒':'使用'}</button></div>`}).join('');
+  $('content').innerHTML=`<div class="duel-page adventure-fight"><div class="duel-top"><button onclick="window.v93AdventureBattle=null;renderAdventure()">退出历练</button><span class="pill">${safe(b.area.name)}</span><button onclick="window.inviteAdventureAlly()">邀请队友</button></div><div class="npc-row">${npcList}</div>${npc?`<div class="fighter enemy"><h3>当前目标：${safe(npc.name)}</h3><div class="bar hpbar"><i style="width:${Math.max(0,Math.min(100,npc.hp/npc.maxHp*100))}%"></i></div><p>生命 ${npc.hp}/${npc.maxHp}｜蛊：${safe(npc.gu?.name||'')}</p></div>`:`<div class="victory-banner">胜利</div>`}<div class="toolbar"><button class="basic-hit-btn" onclick="window.adventureBasic()">${safe(fist.name)} ${n(fist.damage)||0.25}${fleft>0?'｜'+fleft+'秒':''}</button><button onclick="window.openFistLibrary()">切换拳法</button></div><div class="duel-skills">${skills}</div><div class="battle-log duel-log">${(b.logs||[]).map(x=>`<p>${safe(x)}</p>`).join('')}</div></div>`;
+}
+window.inviteAdventureAlly=function(){const to=prompt('输入要邀请的玩家ID'); if(to)toast('已发送历练邀请：'+to+'（当前版本为本地副本提示）');};
+const v93OldRenderAdventure=renderAdventure;
+renderAdventure=function(){ if(window.v93AdventureBattle){renderAdventureBattle();return;} v93OldRenderAdventure(); };
+window.startAdventure=async function(i){
+  if(actionLocked&&actionLocked())return; const a=adventureAreas[i]; if(!a)return;
+  if(typeof areaCooldownLeft==='function'){const cd=areaCooldownLeft(a); if(cd>0)return toast(`此试炼地冷却：${cd}秒`);}
+  const dmg=(typeof areaDamage==='function')?areaDamage(a):3; const hpMax=v93PlayerHpMax(me); const hpAfter=n(me.hp||hpMax)-dmg;
+  if(hpAfter<=0){await saveMe({hp:0,deadUntil:Date.now()+30000}); fx('历练未入场便重伤身死'); if(typeof renderDeathScreen==='function')renderDeathScreen(); return;}
+  await saveMe({hp:hpAfter});
+  window.v93AdventureBattle={area:a,npcs:v93AdventureNpcs(a),logs:[`进入 ${a.name}，遭遇群敌。入场损失生命 ${dmg}`],done:false,failed:false};
+  v93StartAdventureLoop(); renderAdventureBattle();
+};
+window.adventureBasic=async function(){ await window.adventureUse('fist','fist',-1); };
+window.adventureUse=async function(type,id,slot){
+  const b=window.v93AdventureBattle; const npc=v93ActiveNpc(); if(!b||!npc)return toast('没有目标'); let dmg=0,name='';
+  if(type==='fist'){const fist=v93Fist(); const left=v93FistLeft('adventure'); if(left>0)return toast(`普攻冷却：${left}秒`); if(n(me.essence)<n(fist.essence))return toast('真元不足'); if(n(fist.essence)>0)await saveMe({essence:n(me.essence)-n(fist.essence)}); v93SetFistCd('adventure',n(fist.cooldown)||1); dmg=n(fist.damage)||0.25; name=fist.name;}
+  else{const item=getItem(type,id); if(!item)return; if(!isAbsorbed(type,id,me))return toast('未吸收蛊物不能使用'); const left=(typeof v91SkillLeft==='function')?v91SkillLeft('adventure',slot):0; if(left>0)return toast(`冷却中：${left}秒`); const cost=itemUseCost(type,item); if(n(me.essence)<cost)return toast('真元不足'); await saveMe({essence:n(me.essence)-cost}); const attrs=effectAttrs(type,item,me,true); dmg=Math.max(0.25,Number((n(attrs.attack)+n(attrs.spirit)*0.2+n(attrs.speed)*0.1-npc.defense*0.25).toFixed(2))); name=item.name||id; if(typeof v91SetSkillCd==='function')v91SetSkillCd('adventure',slot,item);}
+  npc.hp=Math.max(0,Number((npc.hp-dmg).toFixed(2))); b.logs.unshift(`${me.name||accountId} 使用【${name}】，对 ${npc.name} 造成 ${dmg} 伤害`); if(npc.hp<=0){npc.dead=true;b.logs.unshift(`${npc.name} 被击杀。`);} if(!v93ActiveNpc()&&!b.done){b.done=true; const a=b.area; const rate=(typeof adventureRewardRate==='function')?adventureRewardRate(a):1; const stones=Math.floor(randInt(a.stones[0],a.stones[1])*rate); const inv=myInv(); const mat=a.materials[randInt(0,a.materials.length-1)]; inv.materials||={}; inv.materials[mat]||={count:0}; inv.materials[mat].count+=randInt(1,3); await saveMe({stones:n(me.stones)+stones,inventory:inv,wins:n(me.wins)+1,kills:n(me.kills)+b.npcs.length,adventureCount:n(me.adventureCount)+1,lastAdventureByArea:{...(me.lastAdventureByArea||{}),[a.id]:Date.now()}}); b.logs.unshift(`历练胜利！获得元石 ${stones}，蛊材 ${mat}，击杀 +${b.npcs.length}`); fx(`历练胜利！元石+${stones}`);} renderAdventureBattle();
+};
+
+// 刷新渲染
+try{ if(current==='arena'||current==='adventure')render(); renderVitals(); }catch(e){console.warn('V9.3刷新失败',e);}
