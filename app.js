@@ -1059,3 +1059,180 @@ render=function(){ const q=($('globalSearch')?.value||'').trim(); if(current==='
 renderRules=function(){ $('content').innerHTML=`<div class="scroll-panel"><h2>V8.5 蛊仙时代与炼蛊台</h2><p>六转青玉仙元，七转红霞仙元，八转银晶仙元，九转金杏仙元；六转以上真元条增加发光效果。</p><p>突破失败不再卡死：失败后生命减半、真元清空、退出突破界面。五转巅峰突破六转会触发十道天雷，总计1000伤害。</p><p>闭关收益重做：一转10，二转15，三转20，四转25，五转30，六转50；大闭关五倍，并受聚元阵倍率加成。</p><p>炼蛊台：有蛊方即可投入材料炼制一分钟；炼制真元=目标蛊虫吸收真元×5。凡蛊基础成功率50%，仙蛊1%。跨流派减半，炼道额外+10%。失败或炸炉会消耗材料并生命减半。</p><p>乾坤袋新增销毁物品按钮。</p></div>`; };
 
 render();
+
+/* ===================== V8.6 炼蛊/销毁/天劫/历练地图修复 ===================== */
+// 1）五维只由已吸收蛊虫叠加；杀招与凡蛊屋不再给人物永久五维。
+computedAttrs = function(p=me){
+  const base = {attack:5, defense:5, life:5, speed:5, spirit:5};
+  const absorbed = p?.absorbed || {guworms:{}, killmoves:{}, guhouses:{}};
+  Object.keys(absorbed.guworms||{}).forEach(id=>{
+    const attrs = effectAttrs('guworms', getItem('guworms',id), p, false);
+    attrKeys.forEach(k=>base[k]+=n(attrs[k]));
+  });
+  return base;
+};
+
+// 2）凡蛊屋只取攻击、防御、速度；杀招仍是单属性。
+const v86OldEffectAttrs = effectAttrs;
+effectAttrs = function(type,item,p=me,forUse=false){
+  const out = {attack:0, defense:0, life:0, speed:0, spirit:0};
+  if(!item) return out;
+  if(type==='guhouses'){
+    const ids=item.guIds||item.requiredIds||[];
+    ['attack','defense','speed'].forEach(k=>out[k]=ids.reduce((a,id)=>a+n(getItem('guworms',id)?.[k]),0) || n(item[k]));
+    if(forUse && item.path && !samePath(item,p)) ['attack','defense','speed'].forEach(k=>{out[k]=out[k]>0?Math.max(1,Math.ceil(out[k]/2)):0;});
+    return out;
+  }
+  return v86OldEffectAttrs(type,item,p,forUse);
+};
+
+// 3）创建杀招：普通玩家只能选择自己背包内、主/副流派的蛊虫；管理员可全库综合流派。
+function v86GuPickForKill(selected=[]){
+  let ids=[];
+  if(isAdmin()) ids=approved(state.guworms).map(x=>x.id);
+  else ids=Object.entries(myInv().guworms||{}).filter(([id,v])=>{
+    const g=getItem('guworms',id); return n(v.count)>0 && g && (g.path===me?.mainPath || g.path===me?.subPath);
+  }).map(([id])=>id);
+  const cards=ids.map(id=>{const g=getItem('guworms',id)||{}; return `<label class="pick-card"><input type="checkbox" name="guIds" value="${safe(id)}" ${selected.includes(id)?'checked':''}><span class="pick-name">${safe(g.name||id)}</span><small>${safe(g.rank||'')} · ${safe(g.path||'')} ${!isAdmin()?`×${invCount('guworms',id)}`:''}</small></label>`}).join('') || '<p class="muted">暂无可选蛊虫。玩家只能用背包内主/副流派蛊虫创作杀招。</p>';
+  return `<div class="wide"><div class="pick-title">所需蛊虫（勾选多选）</div><div class="pick-grid">${cards}</div></div>`;
+}
+function v86GuPickAllOwn(selected=[]){ return guMulti(selected,true); }
+
+// 4）重写编辑页，让杀招/凡蛊屋/蛊方更符合规则。
+editItem = async function(type,id=null){
+  if(!requireLogin())return; const item=id?getItem(type,id):{};
+  if(id && !canEditItem(item)) return toast('只能编辑自己创作的，管理员可编辑全部');
+  if(!id && !canMakeWorldThing(type)) return toast('三转以上才可创建蛊虫或蛊方');
+  if((type==='killmoves'||type==='guhouses') && !id && !canCreateKillOrHouse(type)) return toast(type==='killmoves'?'创建杀招需任意流派大师成就':'创建凡蛊屋需任意流派宗师成就');
+  let html=modalHead((id?'编辑':'创作')+typeCN[type]); let inner='';
+  if(type==='guworms') inner=field('name','名称','text',item.name)+select('rank','等级',ranks,item.rank)+select('path','流派',paths,item.path)+field('image','图标路径','text',item.image)+field('price','价格','number',item.price)+field('absorbCost','吸收所需真元','number',item.absorbCost)+field('useCost','使用一次真元','number',item.useCost)+field('range','距离','text',item.range)+field('cooldown','冷却时间/秒','text',item.cooldown)+field('duration','持续/定身时间','text',item.duration)+field('attack','攻击','number',item.attack)+field('defense','防御','number',item.defense)+field('life','生命','number',item.life)+field('speed','速度','number',item.speed)+field('spirit','精神','number',item.spirit)+field('basicName','普攻名','text',item.basicName)+field('basicDamage','普攻伤害','number',item.basicDamage)+field('basicCooldown','普攻冷却/秒','number',item.basicCooldown)+field('basicDuration','普攻持续/秒','number',item.basicDuration)+field('basicEssence','普攻真元','number',item.basicEssence)+area('effect','效果',item.effect);
+  else if(type==='killmoves') inner=field('name','名称','text',item.name)+select('rank','等级',ranks,item.rank)+select('path','流派',paths,item.path)+select('effectAttr','杀招单独属性',Object.keys(attrCN),item.effectAttr||'attack')+field('image','图标路径','text',item.image)+field('price','价格','number',item.price)+field('range','距离','text',item.range)+field('cooldown','冷却时间/秒','text',item.cooldown)+field('duration','持续时间','text',item.duration)+v86GuPickForKill(item.guIds||[])+area('effect','效果描述',item.effect);
+  else if(type==='guhouses') inner=field('name','名称','text',item.name)+select('rank','等级',ranks,item.rank)+select('path','流派',paths,item.path)+field('image','图标路径','text',item.image)+field('price','价格','number',item.price)+field('range','距离','text',item.range)+field('cooldown','冷却时间/秒','text',item.cooldown)+field('duration','持续时间','text',item.duration)+v86GuPickAllOwn(item.guIds||[])+area('effect','效果描述',item.effect);
+  else if(type==='recipes') inner=field('name','蛊方名','text',item.name)+field('target','炼制目标','text',item.target)+field('targetId','目标蛊虫ID（可空，系统会按名称匹配）','text',item.targetId)+field('price','价格','number',item.price)+guMulti(item.guIds||[],true)+materialMulti(item.materialIds||[],true)+area('materials','额外材料/炼制步骤文字',item.materials)+area('note','备注',item.note);
+  else if(type==='materials') inner=field('name','蛊材名','text',item.name)+field('rank','品级','text',item.rank)+field('image','图片路径','text',item.image)+field('price','价格','number',item.price)+area('effect','说明',item.effect);
+  html+=`<form id="editForm" class="form"><div class="row">${inner}</div><div class="toolbar"><button>保存</button>${id&&canEditItem(item)?`<button type="button" class="danger" id="delBtn">删除</button>`:''}</div><p class="muted">普通玩家创作默认进入待审核，管理员审核通过后公开。</p></form>`; openModal(html);
+  $('editForm').onsubmit=async e=>{e.preventDefault(); const fd=new FormData(e.target); const data=Object.fromEntries(fd.entries()); if(type==='killmoves'||type==='guhouses'||type==='recipes') data.guIds=[...e.target.querySelectorAll('input[name="guIds"]:checked')].map(o=>o.value); if(type==='recipes') data.materialIds=[...e.target.querySelectorAll('input[name="materialIds"]:checked')].map(o=>o.value); ['price','attack','defense','life','speed','spirit','absorbCost','useCost','basicDamage','basicCooldown','basicDuration','basicEssence'].forEach(k=>{if(k in data)data[k]=Number(data[k]||0)}); data.creator=item.creator||accountId; if(!id)data.status=isAdmin()?'approved':'pending'; else if(!isAdmin()&&item.status==='rejected')data.status='pending'; await setDoc(id?ref(type,id):doc(col(type)),{...item,...data,updatedAt:serverTimestamp()},{merge:true}); closeModal(); toast('已保存');};
+  if($('delBtn')) $('delBtn').onclick=async()=>{if(confirm('确定删除？')){await deleteDoc(ref(type,id)); closeModal();}};
+};
+window.editItem=editItem;
+
+// 5）销毁已吸收蛊虫/杀招/凡蛊屋。销毁蛊虫会自动移除五维加成、装备、本命蛊。
+window.destroyAbsorbed=async function(type,id){
+  if(!requireLogin())return; if(!isAbsorbed(type,id,me))return toast('该蛊物未被吸收');
+  if(!confirm(`确定彻底销毁已吸收的 ${itemName(type,id)}？相关效果会消失。`))return;
+  const absorbed=me.absorbed||{guworms:{},killmoves:{},guhouses:{}}; absorbed[type]||={}; delete absorbed[type][id];
+  const equipped=(Array.isArray(me.equipped)?me.equipped:[]).map(e=>e&&e.type===type&&e.id===id?null:e);
+  const patch={absorbed,equipped}; if(type==='guworms'&&me.bornGu===id) patch.bornGu=''; if(me.fist?.type===type&&me.fist?.id===id) patch.fist=null;
+  await saveMe(patch); toast('已销毁已吸收蛊物'); render();
+};
+const v86OldRenderBag=renderBag;
+renderBag=function(){
+  v86OldRenderBag();
+  document.querySelectorAll('.destroy-btn').forEach(b=>b.remove());
+  document.querySelectorAll('.bag-item').forEach(card=>{
+    const onclick=card.getAttribute('onclick')||''; const m=onclick.match(/detailFromBag\('([^']+)'\s*,\s*'([^']+)'\)/); if(!m)return;
+    const [_,type,id]=m; const btn=document.createElement('button'); btn.className='danger destroy-btn';
+    if(isAbsorbed(type,id,me)){ btn.textContent='销毁已吸收'; btn.onclick=(ev)=>{ev.stopPropagation(); window.destroyAbsorbed(type,id);}; }
+    else { btn.textContent='销毁'; btn.onclick=(ev)=>{ev.stopPropagation(); window.destroyItem(type,id);}; }
+    card.appendChild(btn);
+  });
+};
+
+// 6）炼蛊：成功弹大字；可无蛊方手动炼制。材料若不符合任何蛊方，炼到一半炸炉。
+function v86SelectedList(form,name){return [...form.querySelectorAll(`input[name="${name}"]:checked`)].map(x=>x.value);}
+function v86RecipeMatchesTarget(recipe,targetId,guIds,matIds){
+  const gu=v85RecipeTarget(recipe); if(!gu||gu.id!==targetId)return false;
+  const a=[...(recipe.guIds||[])].sort().join('|'), b=[...guIds].sort().join('|');
+  const c=[...(recipe.materialIds||[])].sort().join('|'), d=[...matIds].sort().join('|');
+  return a===b && c===d;
+}
+function v86SuccessFx(text){ const d=document.createElement('div'); d.className='refine-success-screen'; d.innerHTML=`<b>炼制成功</b><span>${safe(text||'蛊成！')}</span>`; document.body.appendChild(d); setTimeout(()=>d.remove(),2600); }
+function v86ManualMaterialPicker(){
+  const guPart=pickGrid('guworms','manualGuIds','投入蛊虫材料（可空）',[],true);
+  const matPart=pickGrid('materials','manualMaterialIds','投入蛊材（可空）',[],true);
+  return `<form id="manualRefineForm" class="form manual-refine"><div class="row"><label class="wide">目标蛊虫<select name="targetId">${approved(state.guworms).map(g=>`<option value="${safe(g.id)}">${safe(g.name)} · ${safe(g.rank)} · ${safe(g.path||'')}</option>`).join('')}</select></label>${guPart}${matPart}</div><button>无方炼制/自配材料</button><p class="muted">若投入材料不符合该目标蛊虫的任何蛊方，炼制到一半必定炸炉。</p></form>`;
+}
+const v86OldRenderAlchemy=renderAlchemy;
+renderAlchemy=function(){
+  if(!requireLogin())return;
+  v86OldRenderAlchemy();
+  const panel=document.createElement('div'); panel.className='scroll-panel'; panel.innerHTML=`<h2>无方炼制</h2><p>没有蛊方也能开炉，但材料必须暗合某份蛊方，否则半途炸炉。</p>${v86ManualMaterialPicker()}`;
+  $('content').prepend(panel);
+  const f=$('manualRefineForm'); if(f) f.onsubmit=async(e)=>{e.preventDefault(); const targetId=f.targetId.value; const guIds=v86SelectedList(f,'manualGuIds'); const matIds=v86SelectedList(f,'manualMaterialIds'); await window.startManualRefine(targetId,guIds,matIds);};
+};
+window.startManualRefine=async function(targetId,guIds=[],matIds=[]){
+  if(!requireLogin())return; if(me.refineJob)return toast('炼炉已经燃起'); if(me.cultivateJob||me.breakthroughJob)return toast('闭关/突破中不能炼蛊');
+  const gu=getItem('guworms',targetId); if(!gu)return toast('目标蛊虫不存在'); if(!v85HasRefinePermission(gu))return toast('炼制此转数蛊虫所需成就不足');
+  for(const id of guIds){ if(!v85Have('guworms',id))return toast(`缺少蛊虫材料：${itemName('guworms',id)}`); }
+  for(const id of matIds){ if(!v85Have('materials',id))return toast(`缺少蛊材：${itemName('materials',id)}`); }
+  const matched=state.recipes.some(r=>v86RecipeMatchesTarget(r,targetId,guIds,matIds));
+  const inv=myInv(); guIds.forEach(id=>v85Consume(inv,'guworms',id,1)); matIds.forEach(id=>v85Consume(inv,'materials',id,1));
+  const cost=itemAbsorbCost('guworms',gu,me)*5; const now=Date.now();
+  await saveMe({inventory:inv,refineJob:{recipeId:matched?'manualMatched':'manualMismatch',manual:true,targetId:gu.id,targetName:gu.name,startedAt:now,until:now+60000,costEssence:cost,burned:0,lastBurnAt:now,chance:v85RefineChance(gu),explodeAt:matched?0:now+30000}});
+  toast(matched?'无方炼制开始：材料暗合蛊方':'无方炼制开始：材料不合，炉火隐隐不稳'); render();
+};
+const v86OldFinishRefine=window.finishRefine;
+window.finishRefine=async function(){
+  if(!requireLogin())return; const j=me.refineJob; if(!j)return; if(Date.now()<n(j.until))return toast('火候未足');
+  const gu=getItem('guworms',j.targetId); if(!gu)return toast('目标蛊虫不存在');
+  const ok=Math.random()*100<n(j.chance||50); const inv=myInv();
+  if(ok){ v85Add(inv,'guworms',j.targetId,1); await saveMe({inventory:inv,refineJob:null}); v86SuccessFx(gu.name); fx(`炼蛊成功：${gu.name}`); }
+  else { v85ExplosionFx(); await saveMe({hp:v85HalfHpPatch(),refineJob:null}); fx('炼蛊失败：炸炉受创'); }
+  render();
+};
+
+// 7）管理员可创建历练地图，地图存入 Firestore: adventureMaps。
+state.adventureMaps = state.adventureMaps || [];
+try{ onSnapshot(col('adventureMaps'),snap=>{state.adventureMaps=snap.docs.map(d=>({id:d.id,...d.data()})); if(current==='adventure') render();}); }catch(e){ console.warn('adventureMaps listen failed',e); }
+function v86AllAreas(){ return [...adventureAreas, ...(state.adventureMaps||[])]; }
+window.editAdventureMap=function(id=null){
+  if(!isAdmin())return toast('只有管理员可编辑历练地');
+  const a=id?(state.adventureMaps||[]).find(x=>x.id===id):{};
+  openModal(`${modalHead(id?'编辑历练地':'创建历练地')}<form id="advForm" class="form"><div class="row">${field('name','名称','text',a?.name||'')}${select('rank','推荐转数',['一转','二转','三转','四转','五转'],a?.rank||'一转')}${field('stonesMin','元石最小','number',a?.stones?.[0]||10)}${field('stonesMax','元石最大','number',a?.stones?.[1]||30)}${field('guChance','蛊虫概率%','number',a?.guChance||10)}${field('materialsText','产出蛊材（逗号分隔）','text',(a?.materials||[]).join(','))}${area('desc','描述',a?.desc||'')}</div><button>保存地图</button></form>`);
+  $('advForm').onsubmit=async e=>{e.preventDefault(); const data=Object.fromEntries(new FormData(e.target).entries()); const patch={name:data.name,rank:data.rank,stones:[n(data.stonesMin),n(data.stonesMax)],guChance:n(data.guChance),materials:String(data.materialsText||'').split(/[,，]/).map(x=>x.trim()).filter(Boolean),desc:data.desc||'',cost:0,time:10,creator:accountId,updatedAt:serverTimestamp()}; if(id) await setDoc(ref('adventureMaps',id),patch,{merge:true}); else await addDoc(col('adventureMaps'),{...patch,createdAt:serverTimestamp()}); closeModal(); toast('历练地已保存');};
+};
+renderAdventure=function(){
+  if(!requireLogin())return; renderDeathScreen(); const areas=v86AllAreas();
+  $('content').innerHTML=`<div class="scroll-panel"><h2>历练谷</h2><p>每个试炼地独立冷却1分钟。高转刷低转收益25%；低转强闯高转扣血无收益。</p>${isAdmin()?`<div class="toolbar"><button onclick="window.editAdventureMap()">管理员创建历练地</button></div>`:''}</div><div class="grid adventure-grid">${areas.map((a,i)=>{const dmg=areaDamage(a), rate=adventureRewardRate(a), cd=areaCooldownLeft(a); const custom=!!(state.adventureMaps||[]).find(x=>x.id===a.id); return `<div class="card adventure-card"><h3>${safe(a.name)}</h3><span class="pill">推荐 ${safe(a.rank)}</span><span class="pill">扣血 ${dmg}</span><span class="pill">收益 ${Math.round(rate*100)}%</span><span class="pill">${cd>0?'冷却 '+cd+'秒':'可历练'}</span><p>${safe(a.desc)}</p><p class="muted">奖励：元石 ${a.stones[0]}~${a.stones[1]}｜蛊材×1~3｜蛊虫概率 ${a.guChance}%</p><div class="toolbar"><button ${cd>0||isDead(me)?'disabled':''} onclick="window.startAdventure(${i})">开始历练</button>${isAdmin()&&custom?`<button onclick="window.editAdventureMap('${safe(a.id)}')">编辑</button>`:''}</div></div>`}).join('')}</div>`;
+};
+window.startAdventure=async function(i){
+  if(!requireLogin())return; if(actionLocked())return; const area=v86AllAreas()[i]; if(!area)return;
+  const cd=areaCooldownLeft(area); if(cd>0)return toast(`该试炼地冷却中：${cd}秒`);
+  const dmg=areaDamage(area), attrs=computedAttrs(me), maxHp=attrs.life||5, hpAfter=n(me.hp||maxHp)-dmg; const rate=adventureRewardRate(area); const patch={hp:Math.max(0,hpAfter),areaCooldowns:{...(me.areaCooldowns||{}),[area.id]:Date.now()+V83.areaCooldown}};
+  if(hpAfter<=0){ patch.deadUntil=Date.now()+V82.deathMs; await saveMe(patch); fx('历练失败：身死道消'); renderDeathScreen(); return; }
+  if(rate<=0){ await saveMe(patch); fx(`强闯受创：生命-${dmg}，无收益`); return; }
+  const stones=Math.floor(randInt(area.stones[0],area.stones[1])*rate), mat=(area.materials||['无名蛊材'])[randInt(0,(area.materials||['x']).length-1)], matCount=Math.max(1,Math.floor(randInt(1,3)*rate)); const inv=myInv(); let mid=state.materials.find(m=>m.name===mat)?.id;
+  if(!mid){ const d=await addDoc(col('materials'),staticMaterialObj(mat)); mid=d.id; }
+  v85Add(inv,'materials',mid,matCount); let guText=''; if(Math.random()*100<(n(area.guChance)*rate)){ const pool=approved(state.guworms).filter(g=>rankNum(g.rank)<=rankNum(area.rank)); if(pool.length){const g=pool[randInt(0,pool.length-1)]; v85Add(inv,'guworms',g.id,1); guText=`，获得${g.name}×1`;}}
+  await saveMe({...patch,stones:n(me.stones)+stones,inventory:inv,cultivation:n(me.cultivation)+Math.ceil(rankNum(area.rank)*5*rate)}); fx(`历练完成：生命-${dmg}，元石+${stones}，${mat}×${matCount}${guText}`);
+};
+
+// 8）天劫：使用图片雷电，每2秒一道，十道，每道100伤害。
+const tribImgs=['images/effects/tribulation1.png','images/effects/tribulation2.png','images/effects/tribulation3.png'];
+function showTribulationStrike(i){ const d=document.createElement('div'); d.className='tribulation-strike'; d.innerHTML=`<img src="${tribImgs[i%tribImgs.length]}"><b>天雷 ${i+1}/10</b>`; document.body.appendChild(d); setTimeout(()=>d.remove(),1200); }
+function startTribulationJob(){ return {hits:0,nextAt:Date.now()+2000,total:10,damage:100}; }
+window.finishBreakthrough=async function(){
+  if(!requireLogin())return; const j=me.breakthroughJob; if(!j)return; if(n(j.until)>Date.now())return toast('突破尚未完成');
+  const fail=async(msg)=>{ await saveMe({hp:v85HalfHpPatch(),essence:0,breakthroughJob:null,weakUntil:Date.now()+10000}); fx(msg||'突破失败：经脉受损'); render(); };
+  if(j.failed) return fail('突破失败：真元中断，生命减半');
+  const ok=randInt(1,100)<=n(j.chance||70); if(!ok) return fail('突破失败：道基震荡，生命减半');
+  const next=j.next, need=n(j.need); const newMax=Math.floor((baseEssence[realmRank(next)]||60)*(aptPct[me.aptitude]||0.45));
+  const patch={realm:next,cultivation:Math.max(0,n(me.cultivation)-need),essence:Math.min(newMax,n(me.essence)+Math.ceil(newMax*0.4)),breakthroughJob:null};
+  if(realmRank(next)==='六转'){ patch.tribulationJob=startTribulationJob(); fx('突破六转，天劫将至！'); }
+  else fx(`突破成功：${next}`);
+  await saveMe(patch); render();
+};
+let v86TribRunning=false;
+async function tribulationTick(){
+  if(v86TribRunning||!me||!me.tribulationJob)return; const t=me.tribulationJob; if(Date.now()<n(t.nextAt))return;
+  v86TribRunning=true; const attrs=computedAttrs(me), maxHp=attrs.life||5; const hp=n(me.hp||maxHp)-n(t.damage||100); const hits=n(t.hits)+1; showTribulationStrike(hits-1);
+  const patch={hp:Math.max(0,hp)};
+  if(hp<=0){patch.deadUntil=Date.now()+30000; patch.tribulationJob=null; fx('渡劫失败：天雷灭身');}
+  else if(hits>=n(t.total||10)){patch.tribulationJob=null; fx('十道天雷已过，渡劫完成！');}
+  else patch.tribulationJob={...t,hits,nextAt:Date.now()+2000};
+  await saveMe(patch).catch(()=>{}); v86TribRunning=false; renderVitals();
+}
+setInterval(tribulationTick,500);
+
+renderRules=function(){ $('content').innerHTML=`<div class="scroll-panel"><h2>V8.6 炼蛊与渡劫修复版</h2><p>已吸收蛊虫、杀招、凡蛊屋可以销毁；销毁已吸收蛊虫会移除对应五维加成。</p><p>人物五维只由已吸收蛊虫叠加，杀招与凡蛊屋不提供永久五维。</p><p>炼蛊台支持无方炼制；若投入材料不符合任何蛊方，半途必定炸炉。炼制成功会显示“炼制成功”。</p><p>管理员可创建和编辑历练谷地图。</p><p>六转天劫改为每2秒一道雷，共10道，每道100伤害，并使用雷电图片特效。</p></div>`; };
+render();
