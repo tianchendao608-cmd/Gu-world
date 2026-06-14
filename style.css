@@ -21,3 +21,10 @@
 
 /* V8 growth loop styles */
 .adventure-grid .card{min-height:230px}.adventure-card button[disabled]{opacity:.45;cursor:not-allowed}.progress{height:14px;background:rgba(80,45,10,.16);border-radius:999px;overflow:hidden;border:1px solid var(--line);margin:10px 0 16px}.progress i{display:block;height:100%;background:linear-gradient(90deg,#8f1d1d,#d9b45f)}.trade-grid,.auction-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.card button[disabled]{opacity:.5}@media(max-width:860px){.trade-grid,.auction-grid{grid-template-columns:1fr}.adventure-grid{grid-template-columns:1fr}.scroll-panel .toolbar button{width:100%}}
+
+/* V8.2 历练/闭关/死亡修复样式 */
+#deathOverlay{position:fixed;inset:0;z-index:9999;background:rgba(70,0,0,.86);display:grid;place-items:center;color:#fff;text-align:center;backdrop-filter:blur(4px)}
+#deathOverlay>div{border:2px solid #ffb3b3;background:rgba(20,0,0,.88);border-radius:24px;padding:34px 46px;box-shadow:0 0 80px rgba(255,0,0,.45)}
+#deathOverlay h1{font-size:58px;margin:0 0 14px;color:#ff3333;text-shadow:0 0 18px #000}
+#deathOverlay p{font-size:22px;margin:8px 0}.countdown{display:inline-block;padding:10px 16px;border-radius:14px;background:#1d120a;color:#ffe3a1;border:1px solid #c28b2c;font-weight:900}.danger-text{color:#ffb3b3;border-color:#9c1f1f;background:#2a0707}.adventure-card button:disabled,.toolbar button:disabled{opacity:.45;filter:grayscale(1);cursor:not-allowed}.progress{height:16px;background:rgba(0,0,0,.12);border-radius:999px;overflow:hidden;border:1px solid rgba(100,60,20,.18);margin:10px 0 16px}.progress i{display:block;height:100%;background:linear-gradient(90deg,#a66d19,#f5d16a)}
+@media(max-width:720px){#deathOverlay h1{font-size:40px}#deathOverlay>div{width:88vw;padding:24px 18px}.countdown{display:block;margin:8px 0}.adventure-grid .card{padding:14px}}

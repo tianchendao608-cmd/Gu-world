@@ -478,4 +478,155 @@ window.buyAuction=async function(id){
 };
 renderRules=function(){ $('content').innerHTML=`<div class="scroll-panel"><h2>V8 成长循环版</h2><p>新增历练谷：消耗真元，获得元石、蛊材，并有概率获得同阶蛊虫。</p><p>新增闭关洞：消耗元石获得修为，修为足够后可自动突破小境界。</p><p>新增拍卖行：玩家可离线挂售背包蛊物，买家支付元石后自动转入背包。</p><p>原有规则：同阶及低阶可吸收；未吸收不可装备；跨流派使用效果减半；三转以上可创建蛊虫、蛊方、势力。</p></div>`; };
 
+
+
+/* ===================== V8.2 稳定修复：历练冷却/死亡/闭关倒计时/突破倒计时/自动恢复 ===================== */
+const V82 = { adventureCooldown: 5*60*1000, deathMs: 30*1000 };
+const trialDamageByRank = {"一转":3,"二转":8,"三转":15,"四转":20,"五转":30};
+const essenceRegenByRank = {"一转":1,"二转":2,"三转":4,"四转":8,"五转":16,"六转":32,"七转":64,"八转":128,"九转":256};
+function rankBaseEssence(p=me){ return baseEssence[realmRank(p?.realm)] || 60; }
+function hpRegenRate(p=me){ return essenceRegenByRank[realmRank(p?.realm)] || 1; }
+function isDead(p=me){ return !!p && (n(p.hp) <= 0 || n(p.deadUntil) > Date.now()); }
+function deathLeft(p=me){ return Math.max(0, Math.ceil((n(p?.deadUntil)-Date.now())/1000)); }
+function actionLocked(){ if(!requireLogin()) return true; if(isDead(me)){ renderDeathScreen(); return true; } return false; }
+function nowMs(){ return Date.now(); }
+function adventureLeft(){ return Math.max(0, Math.ceil((n(me?.lastAdventureAt)+V82.adventureCooldown-Date.now())/1000)); }
+function adventureRewardRate(area){
+  const pr=rankNum(realmRank(me?.realm)); const ar=rankNum(area.rank);
+  if(pr < ar) return 0;          // 低转强刷高转：只扣血，不给收益
+  if(pr > ar) return 0.25;       // 高转刷低转：收益25%
+  return 1;
+}
+function areaDamage(area){
+  const pr=rankNum(realmRank(me?.realm)); const ar=rankNum(area.rank);
+  const base=trialDamageByRank[area.rank] || 15;
+  return pr < ar ? Math.max(15, base) : base;
+}
+function redDeathHtml(left){return `<div id="deathOverlay"><div><h1>你已死亡</h1><p>${left>0?`魂魄重聚中：${left}秒`:'可尝试重生'}</p><p>重生消耗：100元石</p>${left<=0?'<button onclick="window.respawnMe()">重生</button>':''}</div></div>`}
+function renderDeathScreen(){
+  let o=document.getElementById('deathOverlay'); const left=deathLeft(me);
+  if(isDead(me) || n(me?.hp)<=0){
+    if(!o){ o=document.createElement('div'); o.id='deathOverlay'; document.body.appendChild(o); }
+    o.innerHTML=redDeathHtml(left).replace('<div id="deathOverlay">','').replace(/<\/div>$/,'');
+  }else if(o) o.remove();
+}
+window.respawnMe=async function(){
+  if(!requireLogin())return; if(deathLeft(me)>0)return toast('死亡惩罚还未结束');
+  if(n(me.stones)<100)return toast('元石不足，重生失败，请联系管理员');
+  await saveMe({stones:n(me.stones)-100,hp:computedAttrs(me).life,deadUntil:0});
+  const o=document.getElementById('deathOverlay'); if(o)o.remove(); toast('重生成功，扣除100元石');
+};
+window.adminKillUser=async function(id){
+  if(!isAdmin())return toast('只有管理员可执行');
+  if(!confirm('确定让该玩家死亡30秒？'))return;
+  await setDoc(ref('users',id),{hp:0,deadUntil:Date.now()+V82.deathMs,updatedAt:serverTimestamp()},{merge:true});
+  toast('已设置死亡30秒');
+};
+
+// 管理员详情加“死亡30秒”按钮
+const oldUserDetailV82 = userDetail;
+userDetail=function(id){ oldUserDetailV82(id); setTimeout(()=>{ if(isAdmin() && $('modalContent')){ const box=document.createElement('div'); box.className='toolbar'; box.innerHTML=`<button class="danger" onclick="window.adminKillUser('${safe(id)}')">设为死亡30秒</button>`; $('modalContent').appendChild(box); } },30); };
+
+// 一键恢复真元：允许为了突破临时超上限，最高到突破所需真元
+window.restoreEssence=async function(){
+  if(!requireLogin())return; if(isDead(me))return renderDeathScreen();
+  const use=restoreAmount ? restoreAmount() : 1;
+  if(n(me.stones)<use)return toast('元石不足');
+  const cap=Math.max(maxEssence(me), breakthroughCost(me).essence);
+  const before=n(me.essence); const add=Math.min(use*10, Math.max(0,cap-before));
+  if(add<=0)return toast('真元已达当前可储备上限');
+  await saveMe({stones:n(me.stones)-use, essence:before+add});
+  toast(`使用${use}元石，恢复${add}真元`);
+};
+
+// 技能释放：未吸收不可使用；冷却倒计时会每秒刷新
+const oldUseEquippedV82 = window.useEquipped;
+window.useEquipped=async function(slot){
+  if(actionLocked())return; const eq=equipArray(); const e=eq[slot]; if(!e)return toast('此格为空');
+  if(!isAbsorbed(e.type,e.id,me))return toast('未吸收蛊物不可使用');
+  const left=equipCooldownLeft(slot); if(left>0)return toast(`冷却中：${left}秒`);
+  await oldUseEquippedV82(slot);
+};
+
+// 历练谷：五分钟冷却、扣血、越阶无收益、高阶刷低阶25%收益
+renderAdventure=function(){
+  if(!requireLogin())return; renderDeathScreen();
+  const cd=adventureLeft();
+  $('content').innerHTML=`<div class="scroll-panel"><h2>历练谷</h2><p>每次历练后需等待5分钟。高转刷低转只获得25%收益；低转强刷高转会扣血且无收益。</p><p class="muted">当前冷却：${cd>0?cd+'秒':'可历练'}｜死亡后30秒可重生，重生扣100元石。</p></div><div class="grid adventure-grid">${adventureAreas.map((a,i)=>{const dmg=areaDamage(a), rate=adventureRewardRate(a); return `<div class="card adventure-card"><h3>${safe(a.name)}</h3><span class="pill">推荐 ${safe(a.rank)}</span><span class="pill">扣血 ${dmg}</span><span class="pill">收益 ${Math.round(rate*100)}%</span><p>${safe(a.desc)}</p><p class="muted">奖励：元石 ${a.stones[0]}~${a.stones[1]}｜蛊材×1~3｜蛊虫概率 ${a.guChance}%</p><button ${cd>0||isDead(me)?'disabled':''} onclick="window.startAdventure(${i})">开始历练</button></div>`}).join('')}</div>`;
+};
+window.startAdventure=async function(i){
+  if(actionLocked())return; const a=adventureAreas[i]; if(!a)return;
+  const cd=adventureLeft(); if(cd>0)return toast(`历练冷却中：${cd}秒`);
+  const dmg=areaDamage(a); const hpAfter=n(me.hp || computedAttrs(me).life)-dmg;
+  const patch={hp:hpAfter,lastAdventureAt:Date.now(),updatedAt:serverTimestamp()};
+  if(hpAfter<=0){ patch.deadUntil=Date.now()+V82.deathMs; await saveMe(patch); fx('历练失败：身死道消'); renderDeathScreen(); return; }
+  const rate=adventureRewardRate(a);
+  if(rate<=0){ await saveMe(patch); fx(`强行历练受创：生命-${dmg}，无收益`); return; }
+  const inv=myInv(); const stones=Math.floor(randInt(a.stones[0],a.stones[1])*rate); const mat=a.materials[randInt(0,a.materials.length-1)]; const matCount=Math.max(1,Math.floor(randInt(1,3)*rate)); addInv(inv,'materials',mat,matCount);
+  let guText=''; const pool=approved(state.guworms).filter(g=>itemRank(g)===a.rank);
+  if(pool.length && randInt(1,100)<=Math.max(1,Math.floor(a.guChance*rate))){const g=pool[randInt(0,pool.length-1)]; addInv(inv,'guworms',g.id,1); guText=`，获得蛊虫：${g.name||g.id}×1`;}
+  await saveMe({...patch,stones:n(me.stones)+stones,inventory:inv,adventureCount:n(me.adventureCount)+1,cultivation:n(me.cultivation)+Math.ceil(stones/3)});
+  fx(`历练完成：生命-${dmg}，元石+${stones}，${mat}×${matCount}${guText}`);
+};
+
+// 闭关洞：小闭关1分钟，大闭关5分钟，突破20秒倒计时且有失败概率
+function cultivateJobDone(){ return me?.cultivateJob && n(me.cultivateJob.until)<=Date.now(); }
+function breakthroughJobDone(){ return me?.breakthroughJob && n(me.breakthroughJob.until)<=Date.now(); }
+function breakthroughChance(p=me){ const apt=p?.aptitude; return apt==='十绝体'?92:apt==='甲'?85:apt==='乙'?78:apt==='丙'?68:55; }
+breakthroughCost=function(p=me){ return {stones:rankNum(realmRank(p?.realm))*120, essence:Math.ceil(rankBaseEssence(p)*1.5)}; };
+renderCultivate=function(){
+  if(!requireLogin())return; renderDeathScreen(); const cur=n(me.cultivation), need=cultivationNeed(me), cost=breakthroughCost(me), next=nextRealmName(me.realm);
+  let jobHtml='';
+  if(me.cultivateJob){ const left=Math.max(0,Math.ceil((n(me.cultivateJob.until)-Date.now())/1000)); jobHtml = left>0 ? `<p class="countdown">闭关中：${left}秒</p>` : `<button onclick="window.claimCultivation()">领取闭关成果 +${n(me.cultivateJob.gain)}修为</button>`; }
+  if(me.breakthroughJob){ const left=Math.max(0,Math.ceil((n(me.breakthroughJob.until)-Date.now())/1000)); jobHtml += left>0 ? `<p class="countdown danger-text">突破中：${left}秒，真元持续燃烧……</p>` : `<button onclick="window.finishBreakthrough()">结算突破</button>`; }
+  $('content').innerHTML=`<div class="scroll-panel"><h2>闭关洞</h2><p>当前境界：<b>${safe(me.realm)}</b> → 下一境界：<b>${safe(next)}</b></p><p>修为：${cur}/${need}</p><div class="progress"><i style="width:${Math.min(100,cur/need*100)}%"></i></div><p>当前真元：${n(me.essence)}/${maxEssence(me)}（突破需 ${cost.essence} 真元，可用元石临时补足）</p>${jobHtml}<div class="toolbar"><button ${me.cultivateJob||me.breakthroughJob||isDead(me)?'disabled':''} onclick="window.startCultivation('small')">闭关一次：1分钟，50元石 → 修为+80</button><button ${me.cultivateJob||me.breakthroughJob||isDead(me)?'disabled':''} onclick="window.startCultivation('big')">大闭关：5分钟，200元石 → 修为+360</button><button ${me.cultivateJob||me.breakthroughJob||isDead(me)?'disabled':''} onclick="window.breakthrough()">尝试突破</button></div><p class="muted">突破耗时20秒，需150%基础真元，并有失败概率。真元不足则突破失败。</p><p>突破消耗：元石 ${cost.stones}，真元 ${cost.essence}｜成功率约 ${breakthroughChance(me)}%</p></div>`;
+};
+window.startCultivation=async function(kind){
+  if(actionLocked())return; if(me.cultivateJob||me.breakthroughJob)return toast('已有闭关/突破进行中');
+  const isBig=kind==='big'; const stones=isBig?200:50, gain=isBig?360:80, dur=isBig?5*60*1000:60*1000;
+  if(n(me.stones)<stones)return toast('元石不足');
+  await saveMe({stones:n(me.stones)-stones,cultivateJob:{until:Date.now()+dur,gain,kind}}); toast(isBig?'大闭关开始':'闭关开始'); render();
+};
+window.claimCultivation=async function(){
+  if(!requireLogin())return; if(!cultivateJobDone())return toast('闭关尚未完成');
+  const gain=n(me.cultivateJob.gain); await saveMe({cultivation:n(me.cultivation)+gain,cultivateJob:null}); toast(`闭关完成，修为+${gain}`); render();
+};
+window.cultivateOnce=async function(stones){ return window.startCultivation(stones>=200?'big':'small'); };
+window.breakthrough=async function(){
+  if(actionLocked())return; if(me.cultivateJob||me.breakthroughJob)return toast('已有闭关/突破进行中');
+  const need=cultivationNeed(me), cost=breakthroughCost(me), next=nextRealmName(me.realm);
+  if(next===me.realm)return toast('已至当前最高境界');
+  if(n(me.cultivation)<need)return toast('修为不足');
+  if(n(me.stones)<cost.stones)return toast('元石不足');
+  if(n(me.essence)<cost.essence)return toast('真元不足，需要150%基础真元');
+  await saveMe({stones:n(me.stones)-cost.stones,breakthroughJob:{until:Date.now()+20*1000,next,costEssence:cost.essence,need,chance:breakthroughChance(me)}}); toast('开始突破，20秒后结算'); render();
+};
+window.finishBreakthrough=async function(){
+  if(!requireLogin())return; if(!breakthroughJobDone())return toast('突破尚未完成');
+  const j=me.breakthroughJob, cost=n(j.costEssence), need=n(j.need); if(n(me.essence)<cost){ await saveMe({breakthroughJob:null}); fx('突破失败：真元不足'); return; }
+  const ok=randInt(1,100)<=n(j.chance||70); const next=j.next;
+  if(!ok){ await saveMe({essence:Math.max(0,n(me.essence)-cost),breakthroughJob:null}); fx('突破失败：道基震荡'); return; }
+  const newMax=Math.floor((baseEssence[realmRank(next)]||60)*(aptPct[me.aptitude]||0.45));
+  await saveMe({realm:next,cultivation:Math.max(0,n(me.cultivation)-need),essence:Math.min(newMax,Math.max(0,n(me.essence)-cost)+Math.ceil(newMax*0.4)),breakthroughJob:null}); fx(`突破成功：${next}`); render();
+};
+
+// 自动恢复：真元每秒恢复，生命每10秒恢复。每10秒写一次数据库，避免狂写。
+let regenLocal={t:Date.now(),save:0};
+function runtimeTick(){
+  if(!me) return; renderDeathScreen();
+  const now=Date.now();
+  // 刷新倒计时UI
+  if(current==='cultivate'||current==='adventure') render(); else renderVitals();
+  if(isDead(me)) return;
+  const elapsed=Math.floor((now-regenLocal.t)/1000); if(elapsed<=0)return; regenLocal.t=now;
+  let es=n(me.essence), hp=n(me.hp||computedAttrs(me).life); const esMax=maxEssence(me), hpMax=computedAttrs(me).life;
+  const er=essenceRegenByRank[realmRank(me.realm)]||1; es=Math.min(esMax, es + er*elapsed);
+  // 每10秒恢复一次生命
+  const hpTicks=Math.floor(now/10000)-Math.floor((now-elapsed*1000)/10000); if(hpTicks>0) hp=Math.min(hpMax, hp + hpRegenRate(me)*hpTicks);
+  if((es!==n(me.essence)||hp!==n(me.hp||hpMax)) && now-regenLocal.save>9000){ regenLocal.save=now; saveMe({essence:es,hp}).catch(()=>{}); }
+}
+setInterval(runtimeTick,1000);
+
+renderRules=function(){ $('content').innerHTML=`<div class="scroll-panel"><h2>V8.2 历练/闭关修复版</h2><p>历练谷：每5分钟一次；高转刷低转收益25%；低转强刷高转只扣血无收益。</p><p>历练扣血：一转3，二转8，三转15，四转20，五转30。死亡后红字30秒，重生扣100元石。</p><p>闭关洞：小闭关1分钟，大闭关5分钟；突破耗时20秒，需150%基础真元，并存在失败概率。</p><p>恢复：一转每秒回1真元，二转2，三转4，四转8，五转16；生命每10秒按同倍率恢复。</p></div>`; };
+
 boot();
