@@ -1385,3 +1385,162 @@ const v90OldRender = render;
 render=function(){ const q=($('globalSearch')?.value||'').trim(); if(current==='lands') renderLands(); else if(current==='arena') renderArena(q); else v90OldRender(); renderVitals(); };
 renderRules=function(){ $('content').innerHTML=`<div class="scroll-panel"><h2>V9 福地与竞技场</h2><p>六转后可开辟福地，福地定时产出元石、修为与仙材。</p><p>新增竞技场，玩家可挑战其他玩家，系统自动生成战报。</p><p>蛊虫新增恢复属性：使用蛊虫时恢复生命，满血不会溢出。</p><p>拍卖行、炼蛊台、历练谷、闭关洞继续保留。</p></div>`; };
 try{ initNav(); render(); }catch(e){ console.warn('V9 render refresh failed',e); }
+
+/* ===================== V9.1 斗蛊台重制版：同意挑战 / 木人 / 野兽 / 玩家实时房间 ===================== */
+try{
+  const arenaNav = navs.find(x=>x[0]==='arena');
+  if(arenaNav){ arenaNav[1]='斗蛊台'; arenaNav[2]='木人试招、野兽挑战、玩家同意挑战'; }
+  icons.arena='斗';
+}catch(e){console.warn('v91 nav patch failed',e)}
+
+state.arenaChallenges = state.arenaChallenges || [];
+state.duelRooms = state.duelRooms || [];
+try{ onSnapshot(query(col('arenaChallenges'),orderBy('createdAt','desc')),snap=>{state.arenaChallenges=snap.docs.map(d=>({id:d.id,...d.data()})); if(current==='arena') render();}); }catch(e){console.warn('arenaChallenges listen failed',e)}
+try{ onSnapshot(query(col('duelRooms'),orderBy('createdAt','desc')),snap=>{state.duelRooms=snap.docs.map(d=>({id:d.id,...d.data()})); if(current==='arena') render();}); }catch(e){console.warn('duelRooms listen failed',e)}
+
+function v91PairKey(a,b){return [a,b].sort().join('__');}
+function v91PlayerName(id){const p=state.users.find(x=>x.id===id); return p?.name || id;}
+function v91MaxHp(p){return hpMaxOf ? hpMaxOf(p) : (computedAttrs(p).life || 5);}
+function v91DuelRoom(id){return (state.duelRooms||[]).find(x=>x.id===id);}
+function v91Challenge(id){return (state.arenaChallenges||[]).find(x=>x.id===id);}
+function v91CooldownKey(pair){return `duel_cd_${pair}`;}
+async function v91GetPairCooldown(pair){
+  try{ const d=await getDoc(ref('duelCooldowns',pair)); return d.exists()?n(d.data().until):n(localStorage.getItem(v91CooldownKey(pair))); }catch(e){return n(localStorage.getItem(v91CooldownKey(pair)));}
+}
+async function v91SetPairCooldown(pair){
+  const until=Date.now()+60*1000;
+  localStorage.setItem(v91CooldownKey(pair),String(until));
+  try{ await setDoc(ref('duelCooldowns',pair),{pair,until,updatedAt:serverTimestamp()},{merge:true}); }catch(e){}
+}
+function v91EquipList(){
+  const eq=Array.isArray(me?.equipped)?me.equipped.slice(0,10):[]; while(eq.length<10)eq.push(null); return eq;
+}
+function v91SkillCooldownKey(roomId,slot){return `duel_skill_cd_${accountId}_${roomId}_${slot}`;}
+function v91SkillLeft(roomId,slot){return Math.max(0,Math.ceil((n(localStorage.getItem(v91SkillCooldownKey(roomId,slot)))-Date.now())/1000));}
+function v91SetSkillCd(roomId,slot,item){const sec=secondsFrom ? secondsFrom(cooldownText(item)) : n(item?.cooldown); if(sec>0)localStorage.setItem(v91SkillCooldownKey(roomId,slot),String(Date.now()+sec*1000));}
+function v91DamageFrom(type,item,attacker,defender){
+  if(type==='basic') return 0.25;
+  const attrs=effectAttrs(type,item,attacker,true);
+  const dAttrs=computedAttrs(defender);
+  const raw=n(attrs.attack)+n(attrs.spirit)*0.25+n(attrs.speed)*0.1;
+  const cut=n(dAttrs.defense)*0.25;
+  return Math.max(0.25, Number((raw-cut).toFixed(2)));
+}
+function v91HealFrom(type,item,attacker){
+  if(!item || type==='basic')return 0;
+  return Math.max(0,n(item.restore || item.heal || item.recover));
+}
+function v91RoomCard(r){
+  const active=r.status==='active'; const finished=r.status==='finished'; const mine=(r.players||[]).includes(accountId);
+  return `<div class="card duel-card"><h3>${safe(v91PlayerName(r.players?.[0]))} VS ${safe(v91PlayerName(r.players?.[1]))}</h3><span class="pill">${active?'进行中':finished?'已结束':'等待'}</span><p>胜者：${safe(r.winner||'未定')}</p>${mine?`<button onclick="window.enterDuelRoom('${r.id}')">进入斗蛊台</button>`:''}</div>`;
+}
+function v91RequestCard(c){
+  const from=c.from, to=c.to; const mineTarget=to===accountId && c.status==='pending'; const mineFrom=from===accountId;
+  return `<div class="card"><h3>${safe(v91PlayerName(from))} 挑战 ${safe(v91PlayerName(to))}</h3><span class="pill">${safe(c.status||'pending')}</span><p class="muted">双方同意后才会开启。结束后一分钟内不能再次挑战同一人。</p><div class="toolbar">${mineTarget?`<button onclick="window.acceptDuel('${c.id}')">接受</button><button class="danger" onclick="window.rejectDuel('${c.id}')">拒绝</button>`:''}${mineFrom&&c.status==='pending'?`<button class="danger" onclick="window.cancelDuel('${c.id}')">取消</button>`:''}${c.roomId?`<button onclick="window.enterDuelRoom('${c.roomId}')">进入房间</button>`:''}</div></div>`;
+}
+window.requestDuel = async function(targetId){
+  if(!requireLogin())return; if(targetId===accountId)return toast('不能挑战自己');
+  const target=state.users.find(u=>u.id===targetId); if(!target)return toast('没有这个玩家');
+  const pair=v91PairKey(accountId,targetId); const until=await v91GetPairCooldown(pair);
+  if(Date.now()<until)return toast(`挑战冷却中：${Math.ceil((until-Date.now())/1000)}秒`);
+  const existing=(state.arenaChallenges||[]).find(c=>c.pair===pair && ['pending','accepted'].includes(c.status));
+  if(existing)return toast('你们之间已有挑战请求或房间');
+  await addDoc(col('arenaChallenges'),{from:accountId,to:targetId,pair,status:'pending',createdAt:serverTimestamp(),createdAtMs:Date.now()});
+  toast('挑战已发送，等待对方同意');
+};
+window.cancelDuel=async function(id){const c=v91Challenge(id); if(!c||c.from!==accountId&&!isAdmin())return; await setDoc(ref('arenaChallenges',id),{status:'cancelled',updatedAt:serverTimestamp()},{merge:true}); toast('已取消挑战');};
+window.rejectDuel=async function(id){const c=v91Challenge(id); if(!c||c.to!==accountId&&!isAdmin())return; await setDoc(ref('arenaChallenges',id),{status:'rejected',updatedAt:serverTimestamp()},{merge:true}); toast('已拒绝挑战');};
+window.acceptDuel=async function(id){
+  if(!requireLogin())return; const c=v91Challenge(id); if(!c||c.to!==accountId&&!isAdmin())return toast('你不能接受这个挑战');
+  const pair=c.pair||v91PairKey(c.from,c.to); const until=await v91GetPairCooldown(pair);
+  if(Date.now()<until)return toast(`挑战冷却中：${Math.ceil((until-Date.now())/1000)}秒`);
+  const a=state.users.find(u=>u.id===c.from), b=state.users.find(u=>u.id===c.to); if(!a||!b)return toast('玩家不存在');
+  const hp={}; hp[c.from]=v91MaxHp(a); hp[c.to]=v91MaxHp(b);
+  const maxHp={}; maxHp[c.from]=hp[c.from]; maxHp[c.to]=hp[c.to];
+  await setDoc(ref('duelRooms',id),{players:[c.from,c.to],pair,status:'active',hp,maxHp,logs:[`斗蛊开启：${v91PlayerName(c.from)} 对阵 ${v91PlayerName(c.to)}`],createdAt:serverTimestamp(),updatedAt:serverTimestamp()},{merge:true});
+  await setDoc(ref('arenaChallenges',id),{status:'accepted',roomId:id,updatedAt:serverTimestamp()},{merge:true});
+  toast('斗蛊已开启');
+  window.enterDuelRoom(id);
+};
+window.enterDuelRoom=function(id){ window.v91CurrentRoom=id; current='arena'; renderArena(); };
+window.leaveDuelRoom=function(){ window.v91CurrentRoom=''; renderArena(); };
+window.duelBasicAttack=async function(roomId){ await window.duelUse(roomId,'basic','basic',-1); };
+window.duelUse=async function(roomId,type,id,slot){
+  if(!requireLogin())return; const r=v91DuelRoom(roomId); if(!r||r.status!=='active')return toast('斗蛊房间不可用');
+  if(!(r.players||[]).includes(accountId))return toast('你不在此斗蛊中');
+  if(n(r.hp?.[accountId])<=0)return toast('你已倒下');
+  const enemy=(r.players||[]).find(x=>x!==accountId); const attacker=state.users.find(u=>u.id===accountId)||me; const defender=state.users.find(u=>u.id===enemy);
+  let item=null, cost=0, name='基础拳法', cd=1;
+  if(type!=='basic'){
+    if(slot>=0 && v91SkillLeft(roomId,slot)>0)return toast(`冷却中：${v91SkillLeft(roomId,slot)}秒`);
+    item=getItem(type,id); if(!item)return toast('蛊物不存在');
+    if(!isAbsorbed(type,id,me))return toast('未吸收蛊物不能在斗蛊中使用');
+    cost=itemUseCost(type,item); if(n(me.essence)<cost)return toast('真元不足');
+    name=item.name||id;
+  }else{
+    const left=n(localStorage.getItem(`duel_basic_cd_${accountId}_${roomId}`))-Date.now(); if(left>0)return toast(`普攻冷却：${Math.ceil(left/1000)}秒`);
+    localStorage.setItem(`duel_basic_cd_${accountId}_${roomId}`,String(Date.now()+1000));
+  }
+  if(cost>0) await saveMe({essence:n(me.essence)-cost});
+  const dmg=v91DamageFrom(type,item,attacker,defender); const heal=v91HealFrom(type,item,attacker);
+  const hp={...(r.hp||{})}; hp[enemy]=Math.max(0, Number((n(hp[enemy])-dmg).toFixed(2)));
+  if(heal>0) hp[accountId]=Math.min(n(r.maxHp?.[accountId]||v91MaxHp(attacker)), n(hp[accountId]||r.maxHp?.[accountId])+heal);
+  const logs=[...(r.logs||[])]; logs.unshift(`${v91PlayerName(accountId)} 使用【${name}】，造成 ${dmg} 伤害${heal>0?`，恢复 ${heal} 生命`:''}`);
+  const patch={hp,logs:logs.slice(0,80),updatedAt:serverTimestamp()};
+  if(hp[enemy]<=0){ patch.status='finished'; patch.winner=accountId; patch.finishedAt=serverTimestamp(); await v91SetPairCooldown(r.pair||v91PairKey(accountId,enemy)); await saveMe({wins:n(me.wins)+1,stones:n(me.stones)+50}); }
+  await setDoc(ref('duelRooms',roomId),patch,{merge:true});
+  if(type!=='basic' && slot>=0) v91SetSkillCd(roomId,slot,item);
+  fx(`${name}：-${dmg}${heal>0?`，+${heal}`:''}`);
+};
+function v91RenderRoom(r){
+  const enemy=(r.players||[]).find(x=>x!==accountId); const myHp=n(r.hp?.[accountId]), enemyHp=n(r.hp?.[enemy]); const myMax=n(r.maxHp?.[accountId]||1), enemyMax=n(r.maxHp?.[enemy]||1);
+  const eq=v91EquipList();
+  const skills=eq.map((e,i)=>{ if(!e)return `<div class="duel-skill empty"><b>${i}</b><span>空</span></div>`; const item=getItem(e.type,e.id); const left=v91SkillLeft(r.id,i); return `<div class="duel-skill"><b>${i}</b>${img(item?.image)}<span>${safe(itemName(e.type,e.id)).slice(0,5)}</span><em>${safe(topAttrText?topAttrText(e.type,item,me,true):'')}</em><button onclick="window.duelUse('${r.id}','${e.type}','${e.id}',${i})">${left>0?left+'秒':'使用'}</button></div>`; }).join('');
+  return `<div class="duel-page"><div class="duel-top"><button onclick="window.leaveDuelRoom()">返回斗蛊台</button><span class="pill">${r.status==='active'?'斗蛊中':'已结束'}</span></div><div class="duel-vs"><div class="fighter"><h3>${safe(v91PlayerName(enemy))}</h3><div class="bar"><i style="width:${Math.max(0,Math.min(100,enemyHp/enemyMax*100))}%"></i></div><p>生命 ${enemyHp}/${enemyMax}</p></div><div class="vs-mark">VS</div><div class="fighter self"><h3>${safe(v91PlayerName(accountId))}</h3><div class="bar"><i style="width:${Math.max(0,Math.min(100,myHp/myMax*100))}%"></i></div><p>生命 ${myHp}/${myMax}</p><button onclick="window.duelBasicAttack('${r.id}')">普攻 0.25</button></div></div><h3>装备蛊物</h3><div class="duel-skills">${skills}</div><h3>战斗记录</h3><div class="battle-log duel-log">${(r.logs||[]).map(x=>`<p>${safe(x)}</p>`).join('')}</div></div>`;
+}
+function v91BeastList(){return [
+  {id:'wooden',name:'练功木人',rank:'一转',hp:50,attack:0,defense:0,reward:0,note:'不会还手，用来试招。'},
+  {id:'wolf1',name:'青竹野狼',rank:'一转',hp:40,attack:1,defense:0,reward:15,note:'每3秒反击。'},
+  {id:'bear2',name:'赤背山熊',rank:'二转',hp:120,attack:4,defense:2,reward:50,note:'适合二转试炼。'},
+  {id:'spirit3',name:'幽魂残影',rank:'三转',hp:240,attack:8,defense:3,reward:120,note:'精神类野怪。'}
+];}
+window.startBeastFight=function(beastId){
+  if(!requireLogin())return; const b=v91BeastList().find(x=>x.id===beastId); if(!b)return;
+  window.v91Beast={...b,hp:b.hp,maxHp:b.hp,logs:[`遭遇 ${b.name}`],lastHit:Date.now()}; renderArena();
+};
+window.beastBasic=async function(){ await v91UseOnBeast('basic','basic',-1); };
+window.beastUse=async function(type,id,slot){ await v91UseOnBeast(type,id,slot); };
+async function v91UseOnBeast(type,id,slot){
+  const b=window.v91Beast; if(!b||b.hp<=0)return toast('没有可攻击目标');
+  let item=null,cost=0,name='基础拳法';
+  if(type!=='basic'){
+    if(slot>=0 && v91SkillLeft('beast',slot)>0)return toast(`冷却中：${v91SkillLeft('beast',slot)}秒`);
+    item=getItem(type,id); if(!item)return; if(!isAbsorbed(type,id,me))return toast('未吸收蛊物不能使用'); cost=itemUseCost(type,item); if(n(me.essence)<cost)return toast('真元不足'); name=item.name||id;
+  }
+  if(cost>0) await saveMe({essence:n(me.essence)-cost});
+  const attrs=type==='basic'?{attack:0.25}:effectAttrs(type,item,me,true); const dmg= type==='basic'?0.25:Math.max(0.25,n(attrs.attack)+n(attrs.spirit)*0.2+n(attrs.speed)*0.1-b.defense*0.25);
+  b.hp=Math.max(0,Number((b.hp-dmg).toFixed(2))); b.logs.unshift(`${me.name||accountId} 使用【${name}】，造成 ${dmg.toFixed(2)} 伤害`);
+  if(type!=='basic'&&slot>=0)v91SetSkillCd('beast',slot,item);
+  if(b.hp<=0){ b.logs.unshift(`胜利！获得元石 ${b.reward}`); await saveMe({stones:n(me.stones)+n(b.reward),wins:n(me.wins)+1}); }
+  fx(`-${dmg.toFixed(2)}`); renderArena();
+}
+function v91RenderBeast(){
+  const b=window.v91Beast; if(!b) return '';
+  const eq=v91EquipList(); const skills=eq.map((e,i)=>{ if(!e)return `<div class="duel-skill empty"><b>${i}</b><span>空</span></div>`; const item=getItem(e.type,e.id); const left=v91SkillLeft('beast',i); return `<div class="duel-skill"><b>${i}</b>${img(item?.image)}<span>${safe(itemName(e.type,e.id)).slice(0,5)}</span><button onclick="window.beastUse('${e.type}','${e.id}',${i})">${left>0?left+'秒':'使用'}</button></div>`; }).join('');
+  return `<div class="duel-page"><div class="duel-top"><button onclick="window.v91Beast=null;renderArena()">退出野战</button></div><div class="fighter"><h3>${safe(b.name)}</h3><div class="bar"><i style="width:${Math.max(0,Math.min(100,b.hp/b.maxHp*100))}%"></i></div><p>生命 ${b.hp}/${b.maxHp}</p></div><button onclick="window.beastBasic()">普攻 0.25</button><div class="duel-skills">${skills}</div><div class="battle-log duel-log">${(b.logs||[]).map(x=>`<p>${safe(x)}</p>`).join('')}</div></div>`;
+}
+renderArena=function(q=''){
+  if(!requireLogin())return;
+  if(window.v91CurrentRoom){ const r=v91DuelRoom(window.v91CurrentRoom); if(r){$('content').innerHTML=v91RenderRoom(r); return;} window.v91CurrentRoom=''; }
+  if(window.v91Beast){$('content').innerHTML=v91RenderBeast(); return;}
+  const players=filter(state.users.filter(u=>u.id!==accountId),q||($('globalSearch')?.value||''));
+  const requests=(state.arenaChallenges||[]).filter(c=>c.from===accountId||c.to===accountId||isAdmin()).slice(0,12);
+  const rooms=(state.duelRooms||[]).filter(r=>(r.players||[]).includes(accountId)||isAdmin()).slice(0,8);
+  $('content').innerHTML=`<div class="scroll-panel"><h2>斗蛊台</h2><p>挑战玩家必须双方同意。挑战结束后，双方一分钟内不能再次挑战同一人。</p><div class="toolbar"><button onclick="window.startBeastFight('wooden')">木人试招</button></div></div><h2 class="section-title">野兽挑战</h2><div class="grid">${v91BeastList().map(b=>`<div class="card"><h3>${safe(b.name)}</h3><span class="pill">${safe(b.rank)}</span><p>生命 ${b.hp}｜攻击 ${b.attack}｜防御 ${b.defense}</p><p class="muted">${safe(b.note)}</p><button onclick="window.startBeastFight('${b.id}')">挑战</button></div>`).join('')}</div><h2 class="section-title">玩家挑战</h2><div class="grid">${players.map(p=>`<div class="card"><h3>${safe(p.name||p.id)}</h3><span class="pill">${safe(p.realm||'一转初期')}</span><p>战力：${Math.round(battlePowerOf(p))}</p><button onclick="window.requestDuel('${safe(p.id)}')">发起挑战</button></div>`).join('')||empty()}</div><h2 class="section-title">挑战请求</h2><div class="grid">${requests.map(v91RequestCard).join('')||empty()}</div><h2 class="section-title">斗蛊房间</h2><div class="grid">${rooms.map(v91RoomCard).join('')||empty()}</div>`;
+};
+
+const v91OldRender = render;
+render=function(){ const q=($('globalSearch')?.value||'').trim(); if(current==='arena') renderArena(q); else v91OldRender(); renderVitals(); };
+renderRules=function(){ $('content').innerHTML=`<div class="scroll-panel"><h2>V9.1 斗蛊台</h2><p>竞技场改为斗蛊台：木人试招、野兽挑战、玩家挑战。</p><p>玩家挑战必须双方同意，结束后同一双方一分钟内不能再次挑战。</p><p>斗蛊中可使用装备栏蛊物、杀招、凡蛊屋，也可使用基础普攻0.25伤害。</p></div>`; };
+try{ initNav(); render(); }catch(e){ console.warn('V9.1 refresh failed',e); }
+

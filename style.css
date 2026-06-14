@@ -61,3 +61,15 @@
 .battle-log{max-height:420px;overflow:auto;background:#1b120c;color:#fff3cc;border:1px solid #bd8d33;border-radius:16px;padding:14px;line-height:1.8}
 .battle-log p{margin:.35rem 0;border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:.35rem}
 @media(max-width:760px){.battle-log{max-height:300px;font-size:14px}.land-card .toolbar{display:grid;grid-template-columns:1fr;gap:8px}}
+
+/* V9.1 斗蛊台 */
+.duel-page{background:linear-gradient(180deg,#fff7df,#ead6a3);border:1px solid var(--line);border-radius:24px;padding:18px;box-shadow:var(--shadow)}
+.duel-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px;flex-wrap:wrap}
+.duel-vs{display:grid;grid-template-columns:1fr 90px 1fr;gap:16px;align-items:center;margin:12px 0}
+.fighter{background:rgba(255,253,244,.9);border:1px solid var(--line);border-radius:20px;padding:16px;text-align:center}
+.fighter.self{border-color:rgba(185,138,45,.55)}
+.vs-mark{font-size:32px;font-weight:900;color:var(--red);text-align:center;text-shadow:0 2px 0 #f4d98e}
+.duel-skills{display:grid;grid-template-columns:repeat(5,minmax(92px,1fr));gap:10px;margin:10px 0 18px}
+.duel-skill{min-height:105px;background:#fffdf4;border:1px solid var(--line);border-radius:14px;padding:8px;display:grid;gap:4px;align-items:center;justify-items:center;text-align:center;position:relative;overflow:hidden}
+.duel-skill.empty{opacity:.55;background:#f0e2bd}.duel-skill b{position:absolute;left:8px;top:6px;background:#1d160f;color:#ffe8b0;border-radius:999px;width:22px;height:22px;display:grid;place-items:center;font-size:12px}.duel-skill .detail-img{width:42px;height:42px;border-radius:12px;margin:0}.duel-skill span{font-weight:800;font-size:13px}.duel-skill em{font-size:12px;color:var(--jade);font-style:normal}.duel-skill button{font-size:12px;padding:5px 8px}.battle-log.duel-log{max-height:300px;overflow:auto;background:rgba(23,18,13,.06);border-radius:16px;padding:10px}.duel-card .pill{margin-left:4px}
+@media(max-width:860px){.duel-vs{grid-template-columns:1fr}.vs-mark{font-size:24px}.duel-skills{grid-template-columns:repeat(2,minmax(0,1fr))}.duel-skill{min-height:88px}.duel-skill .detail-img{width:34px;height:34px}.duel-page{padding:12px}}
