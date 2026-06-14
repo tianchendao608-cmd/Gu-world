@@ -909,3 +909,153 @@ window.detail=detail;
 
 renderRules=function(){ $('content').innerHTML=`<div class="scroll-panel"><h2>V8.4 聚元阵与拳法普攻版</h2><p>闭关洞新增聚元阵：凡俗初阶/中阶/高阶/精良，仙阵初阶/中阶/高阶/精良。聚元阵只影响闭关修为收益。</p><p>右下角新增普攻按钮，默认基础拳法：0.25伤害，1秒一次。</p><p>乾坤袋新增拳法库；少量蛊虫可设置为普攻蛊，被吸收后可作为拳法装备。</p><p>蛊虫编辑新增普攻伤害、普攻冷却、普攻持续、普攻真元消耗。</p></div>`; };
 render();
+
+/* ===================== V8.5 炼蛊台 / 蛊仙时代 / 突破修复 ===================== */
+try{
+  essenceName['六转']='青玉仙元'; essenceName['七转']='红霞仙元'; essenceName['八转']='银晶仙元'; essenceName['九转']='金杏仙元';
+  essenceClass['六转']='essence-jade-immortal'; essenceClass['七转']='essence-rosy-immortal'; essenceClass['八转']='essence-crystal-immortal'; essenceClass['九转']='essence-apricot-immortal';
+}catch(e){}
+
+if(!navs.find(x=>x[0]==='alchemy')){
+  const idx = navs.findIndex(x=>x[0]==='cultivate');
+  navs.splice(idx>=0?idx+1:navs.length,0,['alchemy','炼蛊台','以蛊方入炉，消耗蛊材与真元炼制蛊虫']);
+  icons.alchemy='炉';
+  initNav && initNav();
+}
+
+function v85RankBaseGain(p=me){ const r=rankNum(realmRank(p?.realm)); return r===1?10:r===2?15:r===3?20:r===4?25:r===5?30:50; }
+function v85HalfHpPatch(){ const attrs=computedAttrs(me); const maxHp=attrs.life||5; return Math.max(1,Math.floor(n(me.hp||maxHp)/2)); }
+function v85AttainRank(a){ return attainments.indexOf(a||'无'); }
+function v85RequiredAttainForGuRank(rank){
+  const r=rankNum(rank); return ['无','无','准大师','大师','准宗师','宗师','准大宗师','大宗师','准无上大宗师','无上大宗师'][r]||'无上大宗师';
+}
+function v85AttainForPath(path){ if(path===me?.mainPath) return me?.mainAttain||'无'; if(path===me?.subPath) return me?.subAttain||'无'; if(me?.mainPath==='炼道') return me?.mainAttain||'无'; if(me?.subPath==='炼道') return me?.subAttain||'无'; return '无'; }
+function v85HasRefinePermission(gu){ if(isAdmin())return true; const need=v85RequiredAttainForGuRank(gu.rank||'一转'); const a=v85AttainForPath(gu.path); return v85AttainRank(a)>=v85AttainRank(need); }
+function v85RefineChance(gu){
+  const r=rankNum(gu.rank||'一转'); let chance = r>=6 ? 1 : 50;
+  const need=v85RequiredAttainForGuRank(gu.rank||'一转'); const a=v85AttainForPath(gu.path);
+  const extra=Math.max(0,v85AttainRank(a)-v85AttainRank(need)); chance += extra*10;
+  const isRefine = me?.mainPath==='炼道' || me?.subPath==='炼道'; if(isRefine) chance += 10;
+  const same = samePath(gu,me) || isRefine; if(!same) chance = Math.floor(chance/2);
+  return Math.max(1,Math.min(95,chance));
+}
+function v85RecipeTarget(recipe){
+  if(!recipe)return null;
+  const tid=recipe.targetId || recipe.guId || recipe.targetGuId;
+  if(tid && getItem('guworms',tid)) return getItem('guworms',tid);
+  const target=(recipe.target||recipe.name||'').replace(/蛊方$/,'').trim();
+  return state.guworms.find(g=>g.name===target || (target && g.name && target.includes(g.name))) || null;
+}
+function v85Have(type,id,count=1){ return n(myInv()[type]?.[id]?.count)>=count; }
+function v85Consume(inv,type,id,count=1){ inv[type] ||= {}; inv[type][id] ||= {count:0}; inv[type][id].count = n(inv[type][id].count)-count; if(inv[type][id].count<=0) delete inv[type][id]; }
+function v85Add(inv,type,id,count=1){ inv[type] ||= {}; inv[type][id] ||= {count:0}; inv[type][id].count = n(inv[type][id].count)+count; }
+function v85RecipeNeedHtml(recipe){
+  const guIds=recipe?.guIds||[]; const matIds=recipe?.materialIds||[];
+  const gu=guIds.map(id=>`<span class="pill ${v85Have('guworms',id)?'':'wait'}">${safe(itemName('guworms',id))} ×1</span>`).join('')||'<span class="muted">无蛊虫材料</span>';
+  const mat=matIds.map(id=>`<span class="pill ${v85Have('materials',id)?'':'wait'}">${safe(itemName('materials',id))} ×1</span>`).join('')||'<span class="muted">无蛊材要求</span>';
+  return `<p><b>蛊虫材料：</b>${gu}</p><p><b>蛊材：</b>${mat}</p>`;
+}
+function v85ExplosionFx(){
+  const d=document.createElement('div'); d.className='forge-explosion'; d.innerHTML='<b>轰！</b><span>炼蛊炸炉，经脉震荡！</span>'; document.body.appendChild(d); setTimeout(()=>d.remove(),1800);
+}
+function v85DeathFx(){ const d=document.createElement('div'); d.className='tribulation-screen'; d.innerHTML='<b>天劫降临</b><span>⚡ ⚡ ⚡ ⚡ ⚡ ⚡ ⚡ ⚡ ⚡ ⚡</span>'; document.body.appendChild(d); setTimeout(()=>d.remove(),2200); }
+
+// 闭关收益重做：小闭关按转数给修为；大闭关五倍；聚元阵继续加成。
+window.startCultivation=async function(type){
+  if(!requireLogin())return; const f=(typeof v84Formation==='function')?v84Formation():{mult:1,name:'无聚元阵'};
+  if(typeof actionLocked==='function' && actionLocked())return; if(me.cultivateJob||me.breakthroughJob||me.refineJob)return toast('已有闭关/突破/炼蛊进行中');
+  const isBig=type==='big'; const stones=isBig?200:50; const ms=isBig?5*60*1000:60*1000;
+  if(n(me.stones)<stones)return toast('元石不足');
+  const base=v85RankBaseGain(me)*(isBig?5:1); const gain=Math.ceil(base*(f.mult||1));
+  await saveMe({stones:n(me.stones)-stones,cultivateJob:{until:Date.now()+ms,gain,type,formation:f.name||'无聚元阵'}});
+  toast(`开始闭关：预计修为+${gain}`); render();
+};
+
+// 突破失败修复：不再卡死，失败扣半血、真元归零、退出突破界面。
+window.finishBreakthrough=async function(){
+  if(!requireLogin())return; const j=me.breakthroughJob; if(!j)return;
+  if(n(j.until)>Date.now())return toast('突破尚未完成');
+  const fail=async(msg)=>{ await saveMe({hp:v85HalfHpPatch(),essence:0,breakthroughJob:null,weakUntil:Date.now()+10000}); fx(msg||'突破失败：经脉受损'); render(); };
+  if(j.failed) return fail('突破失败：真元中断，生命减半');
+  const ok=randInt(1,100)<=n(j.chance||70); if(!ok) return fail('突破失败：道基震荡，生命减半');
+  const next=j.next, need=n(j.need); const newMax=Math.floor((baseEssence[realmRank(next)]||60)*(aptPct[me.aptitude]||0.45));
+  let patch={realm:next,cultivation:Math.max(0,n(me.cultivation)-need),essence:Math.min(newMax,n(me.essence)+Math.ceil(newMax*0.4)),breakthroughJob:null};
+  if(realmRank(next)==='六转'){
+    v85DeathFx();
+    const attrs=computedAttrs(me), maxHp=attrs.life||5, hp=n(me.hp||maxHp)-1000; patch.hp=Math.max(0,hp);
+    if(hp<=0){ patch.deadUntil=Date.now()+30000; }
+  }
+  await saveMe(patch); fx(realmRank(next)==='六转'?`突破六转，天劫落下！`:`突破成功：${next}`); render();
+};
+
+// 真元不足时也退出突破，不再卡住。
+let v85Burning=false;
+async function v85BreakthroughFailWatch(){
+  if(v85Burning||!me||!me.breakthroughJob)return; const j=me.breakthroughJob;
+  if(j.failed){ v85Burning=true; await saveMe({hp:v85HalfHpPatch(),essence:0,breakthroughJob:null,weakUntil:Date.now()+10000}).catch(()=>{}); v85Burning=false; fx('突破失败：真元中断，生命减半'); render(); }
+}
+setInterval(v85BreakthroughFailWatch,1200);
+
+function renderAlchemy(){
+  if(!requireLogin())return;
+  const active=me.refineJob; let activeHtml='';
+  if(active){
+    const left=Math.max(0,Math.ceil((n(active.until)-Date.now())/1000)); const gu=getItem('guworms',active.targetId)||{};
+    activeHtml=`<div class="forge-active"><h2>炼蛊炉燃烧中</h2><div class="forge-fire">🔥</div><p>目标：<b>${safe(gu.name||active.targetName)}</b></p><p>剩余：${left}秒｜已燃真元 ${n(active.burned)}/${n(active.costEssence)}</p><div class="progress"><i style="width:${Math.min(100,(60-left)/60*100)}%"></i></div><button onclick="window.restoreEssence()">使用元石恢复真元</button><button onclick="window.finishRefine()" ${left>0?'disabled':''}>开炉取蛊</button></div>`;
+  }
+  const recipes=approved(state.recipes).filter(r=>v85RecipeTarget(r));
+  $('content').innerHTML=`<div class="scroll-panel"><h2>炼蛊台</h2><p>选择蛊方，投入背包材料，炼制一分钟。炼制真元=目标蛊虫吸收真元×5；失败会消耗蛊材并生命减半。</p>${activeHtml}</div><div class="grid forge-grid">${recipes.map(r=>{const gu=v85RecipeTarget(r); const chance=gu?v85RefineChance(gu):0; const cost=gu?itemAbsorbCost('guworms',gu,me)*5:0; return `<div class="card forge-recipe"><h3>${safe(r.name||r.id)}</h3><span class="pill">目标 ${safe(gu?.name||'未知')}</span><span class="pill">${safe(gu?.rank||'')}</span><p>炼制真元：${cost}｜成功率：${chance}%</p>${v85RecipeNeedHtml(r)}<button ${active?'disabled':''} onclick="window.startRefine('${r.id}')">投入炼炉</button></div>`}).join('')||empty()}</div>`;
+}
+window.startRefine=async function(recipeId){
+  if(!requireLogin())return; if(me.refineJob)return toast('炼炉已经燃起'); if(me.cultivateJob||me.breakthroughJob)return toast('闭关/突破中不能炼蛊');
+  const recipe=getItem('recipes',recipeId); const gu=v85RecipeTarget(recipe); if(!recipe||!gu)return toast('蛊方目标不存在');
+  if(!v85HasRefinePermission(gu))return toast('炼制此转数蛊虫所需成就不足');
+  const guIds=recipe.guIds||[], matIds=recipe.materialIds||[];
+  for(const id of guIds){ if(!v85Have('guworms',id))return toast(`缺少蛊虫材料：${itemName('guworms',id)}`); }
+  for(const id of matIds){ if(!v85Have('materials',id))return toast(`缺少蛊材：${itemName('materials',id)}`); }
+  const inv=myInv(); guIds.forEach(id=>v85Consume(inv,'guworms',id,1)); matIds.forEach(id=>v85Consume(inv,'materials',id,1));
+  const cost=itemAbsorbCost('guworms',gu,me)*5; const willExplode=Math.random()<0.10; const explodeAt=willExplode?Date.now()+randInt(8,45)*1000:0;
+  await saveMe({inventory:inv,refineJob:{recipeId,targetId:gu.id,targetName:gu.name,startedAt:Date.now(),until:Date.now()+60000,costEssence:cost,burned:0,lastBurnAt:Date.now(),chance:v85RefineChance(gu),explodeAt}});
+  toast('炼蛊开始，火候已起'); render();
+};
+window.finishRefine=async function(){
+  if(!requireLogin())return; const j=me.refineJob; if(!j)return; if(Date.now()<n(j.until))return toast('火候未足');
+  const gu=getItem('guworms',j.targetId); if(!gu)return toast('目标蛊虫不存在');
+  const ok=Math.random()*100<n(j.chance||50); const inv=myInv();
+  if(ok){ v85Add(inv,'guworms',j.targetId,1); await saveMe({inventory:inv,refineJob:null}); fx(`炼蛊成功：${gu.name}`); }
+  else { v85ExplosionFx(); await saveMe({hp:v85HalfHpPatch(),refineJob:null}); fx('炼蛊失败：炸炉受创'); }
+  render();
+};
+let v85RefineBurning=false;
+async function v85RefineTick(){
+  if(v85RefineBurning||!me||!me.refineJob)return; const j=me.refineJob, now=Date.now();
+  if(n(j.explodeAt)&&now>=n(j.explodeAt)){ v85RefineBurning=true; v85ExplosionFx(); await saveMe({hp:v85HalfHpPatch(),refineJob:null}).catch(()=>{}); v85RefineBurning=false; fx('炼制途中炸炉！'); render(); return; }
+  const last=n(j.lastBurnAt)||n(j.startedAt)||now; const elapsed=Math.floor((now-last)/1000); if(elapsed<=0)return;
+  const per=Math.max(1,Math.ceil(n(j.costEssence)/60)); const burn=per*elapsed;
+  if(n(me.essence)<burn){ v85RefineBurning=true; v85ExplosionFx(); await saveMe({hp:v85HalfHpPatch(),essence:0,refineJob:null}).catch(()=>{}); v85RefineBurning=false; fx('真元不足，炉火反噬！'); render(); return; }
+  v85RefineBurning=true; await saveMe({essence:n(me.essence)-burn,refineJob:{...j,burned:n(j.burned)+burn,lastBurnAt:now}}).catch(()=>{}); v85RefineBurning=false;
+}
+setInterval(v85RefineTick,1000);
+
+window.destroyItem=async function(type,id){
+  if(!requireLogin())return; if(!confirm(`确定销毁 ${itemName(type,id)} ×1？此操作不可恢复。`))return;
+  const inv=myInv(); if(!v85Have(type,id))return toast('背包没有该物品'); v85Consume(inv,type,id,1); await saveMe({inventory:inv}); toast('已销毁'); render();
+};
+
+// 背包增加销毁按钮。
+const v85OldRenderBag=renderBag;
+renderBag=function(){
+  v85OldRenderBag();
+  document.querySelectorAll('.bag-item').forEach(card=>{
+    const onclick=card.getAttribute('onclick')||''; const m=onclick.match(/detailFromBag\('([^']+)'\s*,\s*'([^']+)'\)/); if(!m)return;
+    if(card.querySelector('.destroy-btn'))return;
+    const btn=document.createElement('button'); btn.className='danger destroy-btn'; btn.textContent='销毁'; btn.onclick=(ev)=>{ev.stopPropagation(); window.destroyItem(m[1],m[2]);}; card.appendChild(btn);
+  });
+};
+
+const v85OldRender=render;
+render=function(){ const q=($('globalSearch')?.value||'').trim(); if(current==='alchemy') { renderAlchemy(); renderVitals(); return; } return v85OldRender(); };
+
+renderRules=function(){ $('content').innerHTML=`<div class="scroll-panel"><h2>V8.5 蛊仙时代与炼蛊台</h2><p>六转青玉仙元，七转红霞仙元，八转银晶仙元，九转金杏仙元；六转以上真元条增加发光效果。</p><p>突破失败不再卡死：失败后生命减半、真元清空、退出突破界面。五转巅峰突破六转会触发十道天雷，总计1000伤害。</p><p>闭关收益重做：一转10，二转15，三转20，四转25，五转30，六转50；大闭关五倍，并受聚元阵倍率加成。</p><p>炼蛊台：有蛊方即可投入材料炼制一分钟；炼制真元=目标蛊虫吸收真元×5。凡蛊基础成功率50%，仙蛊1%。跨流派减半，炼道额外+10%。失败或炸炉会消耗材料并生命减半。</p><p>乾坤袋新增销毁物品按钮。</p></div>`; };
+
+render();
