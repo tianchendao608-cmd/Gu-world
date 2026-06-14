@@ -768,3 +768,144 @@ async function v83BreakthroughTick(){
 setInterval(v83BreakthroughTick,1000);
 
 renderRules=function(){ $('content').innerHTML=`<div class="scroll-panel"><h2>V8.3 历练与突破强化版</h2><p>历练谷：每个试炼地独立1分钟冷却；高转刷低转收益25%；低转强刷高转只扣血无收益。</p><p>历练扣血：一转3，二转8，三转15，四转20，五转30。死亡后红字30秒，重生扣100元石。</p><p>闭关洞：小闭关1分钟，大闭关5分钟；突破显示元池丹田动画，20秒内逐秒燃烧真元。</p><p>突破过程中玩家仍可用元石恢复真元；真元不足会停止变色并失败。</p><p>恢复：一转每秒回1真元，二转2，三转4，四转8，五转16；生命每10秒按同倍率恢复。</p></div>`; };
+
+/* ===================== V8.4 聚元阵 + 拳法普攻系统 ===================== */
+const V84_FORMATIONS = [
+  {id:'none', name:'无聚元阵', tier:'无', level:'无', price:0, mult:1},
+  {id:'mortal_low', name:'凡俗初阶聚元阵', tier:'凡俗', level:'初阶', price:500, mult:1.2},
+  {id:'mortal_mid', name:'凡俗中阶聚元阵', tier:'凡俗', level:'中阶', price:1500, mult:1.5},
+  {id:'mortal_high', name:'凡俗高阶聚元阵', tier:'凡俗', level:'高阶', price:5000, mult:2},
+  {id:'mortal_fine', name:'凡俗精良聚元阵', tier:'凡俗', level:'精良', price:15000, mult:3},
+  {id:'immortal_low', name:'仙阵初阶聚元阵', tier:'仙阵', level:'初阶', price:80000, mult:6},
+  {id:'immortal_mid', name:'仙阵中阶聚元阵', tier:'仙阵', level:'中阶', price:200000, mult:11},
+  {id:'immortal_high', name:'仙阵高阶聚元阵', tier:'仙阵', level:'高阶', price:600000, mult:21},
+  {id:'immortal_fine', name:'仙阵精良聚元阵', tier:'仙阵', level:'精良', price:2000000, mult:51}
+];
+const V84_BASE_FISTS = [
+  {id:'base', name:'基础拳法', damage:0.25, cooldown:1, duration:0, essence:0, desc:'人人都会的基础拳击。'},
+  {id:'juntiquan', name:'军体拳', damage:0.5, cooldown:1, duration:0, essence:0, desc:'朴实凶狠，适合低阶蛊师。'},
+  {id:'bengquan', name:'崩拳', damage:1, cooldown:2, duration:0, essence:0, desc:'短促爆发，贴身发力。'},
+  {id:'paoquan', name:'炮拳', damage:2, cooldown:3, duration:0, essence:0, desc:'如炮崩发，攻势沉猛。'},
+  {id:'bajiquan', name:'八极拳', damage:3, cooldown:4, duration:0, essence:0, desc:'贴山靠劲，近身杀伤。'},
+  {id:'xingyiquan', name:'形意拳', damage:5, cooldown:5, duration:0, essence:0, desc:'拳意合一，重在精神与爆发。'}
+];
+function v84Formation(){return V84_FORMATIONS.find(f=>f.id===(me?.formationId||'none')) || V84_FORMATIONS[0];}
+function v84CanUseFormation(f){ const r=rankNum(realmRank(me?.realm)); return isAdmin() || f.id==='none' || f.tier==='凡俗' || r>=6; }
+function v84OwnedFists(){
+  const list=[...V84_BASE_FISTS.map(x=>({kind:'base',...x}))];
+  const absorbed=me?.absorbed?.guworms||{};
+  Object.keys(absorbed).forEach(id=>{
+    const g=getItem('guworms',id);
+    if(g && (g.basicAttack==='是' || g.hasBasicAttack==='是' || n(g.basicDamage)>0 || n(g.punchDamage)>0)){
+      list.push({kind:'gu', id, name:g.basicName||g.name||id, damage:n(g.basicDamage||g.punchDamage||1), cooldown:n(g.basicCooldown||g.punchCooldown||1), duration:n(g.basicDuration||g.punchDuration||0), essence:n(g.basicEssence||g.punchEssence||0), image:g.image||'', desc:g.basicDesc||g.effect||''});
+    }
+  });
+  return list;
+}
+function v84CurrentFist(){
+  const fid=me?.fistId||'base';
+  return v84OwnedFists().find(f=>(f.kind==='gu'?`gu:${f.id}`:f.id)===fid) || V84_BASE_FISTS[0];
+}
+function v84FistKey(){return `gu_v84_fist_cd_${accountId}`;}
+function v84FistLeft(){return Math.max(0,Math.ceil((n(localStorage.getItem(v84FistKey()))-Date.now())/1000));}
+function v84SetFistCd(sec){if(sec>0)localStorage.setItem(v84FistKey(),String(Date.now()+sec*1000));}
+window.useFistAttack=async function(){
+  if(!requireLogin())return; if(isDead && isDead(me))return toast('死亡状态不可攻击');
+  const left=v84FistLeft(); if(left>0)return toast(`普攻冷却中：${left}秒`);
+  const fist=v84CurrentFist(); const cost=n(fist.essence);
+  if(n(me.essence)<cost)return toast('真元不足');
+  await saveMe({essence:n(me.essence)-cost});
+  v84SetFistCd(n(fist.cooldown)||1);
+  fx(`${fist.name}：伤害 ${n(fist.damage)}`);
+  renderVitals();
+};
+window.equipFist=async function(fid){
+  if(!requireLogin())return; const ok=v84OwnedFists().some(f=>(f.kind==='gu'?`gu:${f.id}`:f.id)===fid);
+  if(!ok)return toast('你尚未拥有此拳法');
+  await saveMe({fistId:fid}); toast('拳法已装备'); render();
+};
+window.openFistLibrary=function(){
+  if(!requireLogin())return; const cur=me?.fistId||'base';
+  openModal(`${modalHead('拳法库')}<div class="fist-grid">${v84OwnedFists().map(f=>{const fid=f.kind==='gu'?`gu:${f.id}`:f.id; return `<div class="fist-card ${fid===cur?'active':''}">${f.image?img(f.image):''}<h3>${safe(f.name)}</h3><p>伤害 ${n(f.damage)}｜冷却 ${n(f.cooldown)}秒｜真元 ${n(f.essence)}</p><p class="muted">${safe(f.desc||'')}</p><button onclick="window.equipFist('${safe(fid)}')">${fid===cur?'已装备':'装备'}</button></div>`}).join('')}</div>`);
+};
+
+const v84OldRenderVitals = renderVitals;
+renderVitals=function(){
+  v84OldRenderVitals();
+  const box=$('vitalsDock'); if(!box || !me)return;
+  const fist=v84CurrentFist(); const left=v84FistLeft();
+  const add=`<div class="fist-dock"><div><b>普攻</b>：${safe(fist.name)} <span>${n(fist.damage)}伤害</span></div><button onclick="window.useFistAttack()">${left>0?left+'秒':'普攻'}</button><button onclick="window.openFistLibrary()">拳法库</button></div>`;
+  if(!box.querySelector('.fist-dock')) box.insertAdjacentHTML('beforeend',add);
+};
+
+// 聚元阵加成闭关洞：小闭关/大闭关收益乘以聚元阵倍率。
+const v84OldRenderCultivate = renderCultivate;
+renderCultivate=function(){
+  if(!requireLogin())return;
+  v84OldRenderCultivate();
+  const panel=document.createElement('div'); panel.className='scroll-panel formation-panel';
+  const f=v84Formation();
+  panel.innerHTML=`<h2>聚元阵</h2><p>当前阵法：<b>${safe(f.name)}</b>｜闭关收益 ×${f.mult}</p><div class="formation-grid">${V84_FORMATIONS.filter(x=>x.id!=='none').map(x=>`<div class="formation-card ${x.id===f.id?'active':''}"><h3>${safe(x.name)}</h3><span class="pill">${safe(x.tier)}·${safe(x.level)}</span><p>闭关收益 ×${x.mult}</p><p>价格：${n(x.price)}元石</p><button onclick="window.buyFormation('${x.id}')">${x.id===f.id?'已启用':'购买/启用'}</button>${!v84CanUseFormation(x)?'<p class="muted">六转以上方可使用仙阵</p>':''}</div>`).join('')}</div>`;
+  $('content').appendChild(panel);
+};
+window.buyFormation=async function(id){
+  if(!requireLogin())return; const f=V84_FORMATIONS.find(x=>x.id===id); if(!f)return;
+  if(!v84CanUseFormation(f))return toast('境界不足，仙阵需六转以上');
+  const owned=me.formations||{}; if(!owned[id]){ if(n(me.stones)<f.price)return toast('元石不足'); owned[id]=true; await saveMe({stones:n(me.stones)-f.price, formations:owned, formationId:id}); toast('聚元阵已购买并启用'); }
+  else { await saveMe({formationId:id}); toast('聚元阵已启用'); }
+  render();
+};
+const v84OldStartCultivation = window.startCultivation;
+window.startCultivation=async function(type){
+  if(!requireLogin())return;
+  const f=v84Formation();
+  if(!v84CanUseFormation(f))return toast('当前聚元阵不可用');
+  if(actionLocked && actionLocked())return;
+  if(me.cultivateJob||me.breakthroughJob)return toast('已有闭关/突破进行中');
+  const isBig=type==='big'; const stones=isBig?200:50; const baseGain=isBig?360:80; const ms=isBig?5*60*1000:60*1000;
+  if(n(me.stones)<stones)return toast('元石不足');
+  const gain=Math.ceil(baseGain*f.mult);
+  await saveMe({stones:n(me.stones)-stones,cultivateJob:{until:Date.now()+ms,gain,type,formation:f.name}});
+  toast(`开始闭关：${f.name}，预计修为+${gain}`); render();
+};
+
+// 蛊虫编辑增加“普攻蛊”字段。
+const v84OldEditItem = editItem;
+editItem=async function(type,id=null){
+  if(type!=='guworms') return v84OldEditItem(type,id);
+  if(!requireLogin())return; const item=id?getItem(type,id):{};
+  if(id && !canEditItem(item)) return toast('只能编辑自己创作的，管理员可编辑全部');
+  if(!id && !canMakeWorldThing(type)) return toast('三转以上才可创建蛊虫或蛊方');
+  let html=modalHead((id?'编辑':'创作')+typeCN[type]);
+  let inner=field('name','名称','text',item.name)+select('rank','等级',ranks,item.rank)+select('path','流派',paths,item.path)+field('image','图标路径','text',item.image)+field('price','价格','number',item.price)+field('absorbCost','吸收所需真元','number',item.absorbCost)+field('useCost','使用一次真元','number',item.useCost)+field('range','距离','text',item.range)+field('cooldown','冷却时间/秒','text',item.cooldown)+field('duration','持续/定身时间','text',item.duration)+field('attack','攻击','number',item.attack)+field('defense','防御','number',item.defense)+field('life','生命','number',item.life)+field('speed','速度','number',item.speed)+field('spirit','精神','number',item.spirit)+select('basicAttack','是否拥有普攻',['否','是'],item.basicAttack||item.hasBasicAttack||'否')+field('basicName','普攻名称','text',item.basicName||item.name||'')+field('basicDamage','普攻伤害','number',item.basicDamage||item.punchDamage||0)+field('basicCooldown','普攻冷却/秒','number',item.basicCooldown||item.punchCooldown||1)+field('basicDuration','普攻持续/秒','number',item.basicDuration||item.punchDuration||0)+field('basicEssence','普攻消耗真元','number',item.basicEssence||item.punchEssence||0)+area('basicDesc','普攻描述',item.basicDesc||'')+area('effect','效果',item.effect);
+  html+=`<form id="editForm" class="form"><div class="row">${inner}</div><div class="toolbar"><button>保存</button>${id&&canEditItem(item)?`<button type="button" class="danger" id="delBtn">删除</button>`:''}</div><p class="muted">只有少量蛊虫需要设为普攻蛊；被吸收后可在拳法库装备。</p></form>`; openModal(html);
+  $('editForm').onsubmit=async e=>{e.preventDefault(); const fd=new FormData(e.target); const data=Object.fromEntries(fd.entries()); ['price','attack','defense','life','speed','spirit','absorbCost','useCost','basicDamage','basicCooldown','basicDuration','basicEssence'].forEach(k=>{if(k in data)data[k]=Number(data[k]||0)}); data.creator=item.creator||accountId; if(!id)data.status=isAdmin()?'approved':'pending'; await setDoc(id?ref(type,id):doc(col(type)),{...item,...data,updatedAt:serverTimestamp()},{merge:true}); closeModal(); toast('已保存');};
+  if($('delBtn')) $('delBtn').onclick=async()=>{if(confirm('确定删除？')){await deleteDoc(ref(type,id)); closeModal();}};
+};
+window.editItem=editItem;
+
+// 乾坤袋加入拳法库入口与已装备拳法提示。
+const v84OldRenderBag = renderBag;
+renderBag=function(){
+  v84OldRenderBag();
+  if(!me)return;
+  const cur=v84CurrentFist();
+  const html=`<h3>拳法库</h3><div class="scroll-panel fist-summary"><p>当前拳法：<b>${safe(cur.name)}</b>｜伤害 ${n(cur.damage)}｜冷却 ${n(cur.cooldown)}秒｜真元 ${n(cur.essence)}</p><button onclick="window.openFistLibrary()">打开拳法库</button></div>`;
+  $('content').insertAdjacentHTML('beforeend',html);
+};
+
+// 详情页显示普攻参数。
+const v84OldDetail = detail;
+detail=function(type,id){
+  v84OldDetail(type,id);
+  if(type==='guworms'){
+    const item=getItem(type,id); if(!item)return;
+    const mc=$('modalContent'); if(!mc)return;
+    const html=`<div class="scroll-panel mini-basic"><h3>普攻信息</h3><p>是否拥有普攻：${safe(item.basicAttack||item.hasBasicAttack||'否')}</p><p>${safe(item.basicName||item.name||'')}｜伤害 ${n(item.basicDamage||item.punchDamage)}｜冷却 ${n(item.basicCooldown||item.punchCooldown)}秒｜持续 ${n(item.basicDuration||item.punchDuration)}秒｜真元 ${n(item.basicEssence||item.punchEssence)}</p></div>`;
+    mc.insertAdjacentHTML('beforeend',html);
+  }
+};
+window.detail=detail;
+
+renderRules=function(){ $('content').innerHTML=`<div class="scroll-panel"><h2>V8.4 聚元阵与拳法普攻版</h2><p>闭关洞新增聚元阵：凡俗初阶/中阶/高阶/精良，仙阵初阶/中阶/高阶/精良。聚元阵只影响闭关修为收益。</p><p>右下角新增普攻按钮，默认基础拳法：0.25伤害，1秒一次。</p><p>乾坤袋新增拳法库；少量蛊虫可设置为普攻蛊，被吸收后可作为拳法装备。</p><p>蛊虫编辑新增普攻伤害、普攻冷却、普攻持续、普攻真元消耗。</p></div>`; };
+render();
