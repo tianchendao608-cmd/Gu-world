@@ -1,0 +1,2446 @@
+[
+  {
+    "id": "recipe_gu_xue_1_1",
+    "name": "血刃蛊蛊方",
+    "rank": "一转",
+    "path": "血道",
+    "target": "血刃蛊",
+    "targetGuId": "gu_xue_1_1",
+    "price": 10,
+    "guIds": [],
+    "materialIds": [
+      "mat_xue_1_1",
+      "mat_xue_1_2"
+    ],
+    "materials": "初血草×3、初血石×3",
+    "note": "炼制血刃蛊的标准蛊方，主材偏向血道，适合一转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_xue_1_2",
+    "name": "血甲蛊蛊方",
+    "rank": "一转",
+    "path": "血道",
+    "target": "血甲蛊",
+    "targetGuId": "gu_xue_1_2",
+    "price": 10,
+    "guIds": [],
+    "materialIds": [
+      "mat_xue_1_1",
+      "mat_xue_1_2"
+    ],
+    "materials": "初血草×3、初血石×3",
+    "note": "炼制血甲蛊的标准蛊方，主材偏向血道，适合一转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_xue_2_1",
+    "name": "血息二蛊蛊方",
+    "rank": "二转",
+    "path": "血道",
+    "target": "血息二蛊",
+    "targetGuId": "gu_xue_2_1",
+    "price": 24,
+    "guIds": [],
+    "materialIds": [
+      "mat_xue_2_1",
+      "mat_xue_2_2",
+      "mat_xue_1_3"
+    ],
+    "materials": "赤血草×4、赤血石×4、初血晶×4",
+    "note": "炼制血息二蛊的标准蛊方，主材偏向血道，适合二转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_xue_2_2",
+    "name": "血步二蛊蛊方",
+    "rank": "二转",
+    "path": "血道",
+    "target": "血步二蛊",
+    "targetGuId": "gu_xue_2_2",
+    "price": 18,
+    "guIds": [],
+    "materialIds": [
+      "mat_xue_2_1",
+      "mat_xue_2_2",
+      "mat_xue_1_3"
+    ],
+    "materials": "赤血草×4、赤血石×4、初血晶×4",
+    "note": "炼制血步二蛊的标准蛊方，主材偏向血道，适合二转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_xue_3_1",
+    "name": "血念三蛊蛊方",
+    "rank": "三转",
+    "path": "血道",
+    "target": "血念三蛊",
+    "targetGuId": "gu_xue_3_1",
+    "price": 96,
+    "guIds": [],
+    "materialIds": [
+      "mat_xue_3_1",
+      "mat_xue_3_2",
+      "mat_xue_2_3"
+    ],
+    "materials": "玄血草×5、玄血石×5、赤血晶×5",
+    "note": "炼制血念三蛊的标准蛊方，主材偏向血道，适合三转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_xue_3_2",
+    "name": "血刺三蛊蛊方",
+    "rank": "三转",
+    "path": "血道",
+    "target": "血刺三蛊",
+    "targetGuId": "gu_xue_3_2",
+    "price": 72,
+    "guIds": [],
+    "materialIds": [
+      "mat_xue_3_1",
+      "mat_xue_3_2",
+      "mat_xue_2_3"
+    ],
+    "materials": "玄血草×5、玄血石×5、赤血晶×5",
+    "note": "炼制血刺三蛊的标准蛊方，主材偏向血道，适合三转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_xue_4_1",
+    "name": "血盾四蛊蛊方",
+    "rank": "四转",
+    "path": "血道",
+    "target": "血盾四蛊",
+    "targetGuId": "gu_xue_4_1",
+    "price": 420,
+    "guIds": [],
+    "materialIds": [
+      "mat_xue_4_1",
+      "mat_xue_4_2",
+      "mat_xue_3_3"
+    ],
+    "materials": "灵血草×6、灵血石×6、玄血晶×6",
+    "note": "炼制血盾四蛊的标准蛊方，主材偏向血道，适合四转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_xue_4_2",
+    "name": "血魄四蛊蛊方",
+    "rank": "四转",
+    "path": "血道",
+    "target": "血魄四蛊",
+    "targetGuId": "gu_xue_4_2",
+    "price": 315,
+    "guIds": [],
+    "materialIds": [
+      "mat_xue_4_1",
+      "mat_xue_4_2",
+      "mat_xue_3_3"
+    ],
+    "materials": "灵血草×6、灵血石×6、玄血晶×6",
+    "note": "炼制血魄四蛊的标准蛊方，主材偏向血道，适合四转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_xue_5_1",
+    "name": "血影五蛊蛊方",
+    "rank": "五转",
+    "path": "血道",
+    "target": "血影五蛊",
+    "targetGuId": "gu_xue_5_1",
+    "price": 1440,
+    "guIds": [],
+    "materialIds": [
+      "mat_xue_5_1",
+      "mat_xue_5_2",
+      "mat_xue_4_3"
+    ],
+    "materials": "王血草×7、王血石×7、灵血晶×7",
+    "note": "炼制血影五蛊的标准蛊方，主材偏向血道，适合五转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_xue_5_2",
+    "name": "血心五蛊蛊方",
+    "rank": "五转",
+    "path": "血道",
+    "target": "血心五蛊",
+    "targetGuId": "gu_xue_5_2",
+    "price": 1080,
+    "guIds": [],
+    "materialIds": [
+      "mat_xue_5_1",
+      "mat_xue_5_2",
+      "mat_xue_4_3"
+    ],
+    "materials": "王血草×7、王血石×7、灵血晶×7",
+    "note": "炼制血心五蛊的标准蛊方，主材偏向血道，适合五转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_yun_1_1",
+    "name": "云刃蛊蛊方",
+    "rank": "一转",
+    "path": "云道",
+    "target": "云刃蛊",
+    "targetGuId": "gu_yun_1_1",
+    "price": 10,
+    "guIds": [],
+    "materialIds": [
+      "mat_yun_1_1",
+      "mat_yun_1_2"
+    ],
+    "materials": "初云草×3、初云石×3",
+    "note": "炼制云刃蛊的标准蛊方，主材偏向云道，适合一转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_yun_1_2",
+    "name": "云甲蛊蛊方",
+    "rank": "一转",
+    "path": "云道",
+    "target": "云甲蛊",
+    "targetGuId": "gu_yun_1_2",
+    "price": 10,
+    "guIds": [],
+    "materialIds": [
+      "mat_yun_1_1",
+      "mat_yun_1_2"
+    ],
+    "materials": "初云草×3、初云石×3",
+    "note": "炼制云甲蛊的标准蛊方，主材偏向云道，适合一转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_yun_2_1",
+    "name": "云息二蛊蛊方",
+    "rank": "二转",
+    "path": "云道",
+    "target": "云息二蛊",
+    "targetGuId": "gu_yun_2_1",
+    "price": 24,
+    "guIds": [],
+    "materialIds": [
+      "mat_yun_2_1",
+      "mat_yun_2_2",
+      "mat_yun_1_3"
+    ],
+    "materials": "赤云草×4、赤云石×4、初云晶×4",
+    "note": "炼制云息二蛊的标准蛊方，主材偏向云道，适合二转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_yun_2_2",
+    "name": "云步二蛊蛊方",
+    "rank": "二转",
+    "path": "云道",
+    "target": "云步二蛊",
+    "targetGuId": "gu_yun_2_2",
+    "price": 18,
+    "guIds": [],
+    "materialIds": [
+      "mat_yun_2_1",
+      "mat_yun_2_2",
+      "mat_yun_1_3"
+    ],
+    "materials": "赤云草×4、赤云石×4、初云晶×4",
+    "note": "炼制云步二蛊的标准蛊方，主材偏向云道，适合二转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_yun_3_1",
+    "name": "云念三蛊蛊方",
+    "rank": "三转",
+    "path": "云道",
+    "target": "云念三蛊",
+    "targetGuId": "gu_yun_3_1",
+    "price": 96,
+    "guIds": [],
+    "materialIds": [
+      "mat_yun_3_1",
+      "mat_yun_3_2",
+      "mat_yun_2_3"
+    ],
+    "materials": "玄云草×5、玄云石×5、赤云晶×5",
+    "note": "炼制云念三蛊的标准蛊方，主材偏向云道，适合三转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_yun_3_2",
+    "name": "云刺三蛊蛊方",
+    "rank": "三转",
+    "path": "云道",
+    "target": "云刺三蛊",
+    "targetGuId": "gu_yun_3_2",
+    "price": 72,
+    "guIds": [],
+    "materialIds": [
+      "mat_yun_3_1",
+      "mat_yun_3_2",
+      "mat_yun_2_3"
+    ],
+    "materials": "玄云草×5、玄云石×5、赤云晶×5",
+    "note": "炼制云刺三蛊的标准蛊方，主材偏向云道，适合三转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_yun_4_1",
+    "name": "云盾四蛊蛊方",
+    "rank": "四转",
+    "path": "云道",
+    "target": "云盾四蛊",
+    "targetGuId": "gu_yun_4_1",
+    "price": 420,
+    "guIds": [],
+    "materialIds": [
+      "mat_yun_4_1",
+      "mat_yun_4_2",
+      "mat_yun_3_3"
+    ],
+    "materials": "灵云草×6、灵云石×6、玄云晶×6",
+    "note": "炼制云盾四蛊的标准蛊方，主材偏向云道，适合四转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_yun_4_2",
+    "name": "云魄四蛊蛊方",
+    "rank": "四转",
+    "path": "云道",
+    "target": "云魄四蛊",
+    "targetGuId": "gu_yun_4_2",
+    "price": 315,
+    "guIds": [],
+    "materialIds": [
+      "mat_yun_4_1",
+      "mat_yun_4_2",
+      "mat_yun_3_3"
+    ],
+    "materials": "灵云草×6、灵云石×6、玄云晶×6",
+    "note": "炼制云魄四蛊的标准蛊方，主材偏向云道，适合四转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_yun_5_1",
+    "name": "云影五蛊蛊方",
+    "rank": "五转",
+    "path": "云道",
+    "target": "云影五蛊",
+    "targetGuId": "gu_yun_5_1",
+    "price": 1440,
+    "guIds": [],
+    "materialIds": [
+      "mat_yun_5_1",
+      "mat_yun_5_2",
+      "mat_yun_4_3"
+    ],
+    "materials": "王云草×7、王云石×7、灵云晶×7",
+    "note": "炼制云影五蛊的标准蛊方，主材偏向云道，适合五转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_yun_5_2",
+    "name": "云心五蛊蛊方",
+    "rank": "五转",
+    "path": "云道",
+    "target": "云心五蛊",
+    "targetGuId": "gu_yun_5_2",
+    "price": 1080,
+    "guIds": [],
+    "materialIds": [
+      "mat_yun_5_1",
+      "mat_yun_5_2",
+      "mat_yun_4_3"
+    ],
+    "materials": "王云草×7、王云石×7、灵云晶×7",
+    "note": "炼制云心五蛊的标准蛊方，主材偏向云道，适合五转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_huo_1_1",
+    "name": "炎刃蛊蛊方",
+    "rank": "一转",
+    "path": "火道",
+    "target": "炎刃蛊",
+    "targetGuId": "gu_huo_1_1",
+    "price": 10,
+    "guIds": [],
+    "materialIds": [
+      "mat_huo_1_1",
+      "mat_huo_1_2"
+    ],
+    "materials": "初炎草×3、初炎石×3",
+    "note": "炼制炎刃蛊的标准蛊方，主材偏向火道，适合一转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_huo_1_2",
+    "name": "炎甲蛊蛊方",
+    "rank": "一转",
+    "path": "火道",
+    "target": "炎甲蛊",
+    "targetGuId": "gu_huo_1_2",
+    "price": 10,
+    "guIds": [],
+    "materialIds": [
+      "mat_huo_1_1",
+      "mat_huo_1_2"
+    ],
+    "materials": "初炎草×3、初炎石×3",
+    "note": "炼制炎甲蛊的标准蛊方，主材偏向火道，适合一转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_huo_2_1",
+    "name": "炎息二蛊蛊方",
+    "rank": "二转",
+    "path": "火道",
+    "target": "炎息二蛊",
+    "targetGuId": "gu_huo_2_1",
+    "price": 24,
+    "guIds": [],
+    "materialIds": [
+      "mat_huo_2_1",
+      "mat_huo_2_2",
+      "mat_huo_1_3"
+    ],
+    "materials": "赤炎草×4、赤炎石×4、初炎晶×4",
+    "note": "炼制炎息二蛊的标准蛊方，主材偏向火道，适合二转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_huo_2_2",
+    "name": "炎步二蛊蛊方",
+    "rank": "二转",
+    "path": "火道",
+    "target": "炎步二蛊",
+    "targetGuId": "gu_huo_2_2",
+    "price": 18,
+    "guIds": [],
+    "materialIds": [
+      "mat_huo_2_1",
+      "mat_huo_2_2",
+      "mat_huo_1_3"
+    ],
+    "materials": "赤炎草×4、赤炎石×4、初炎晶×4",
+    "note": "炼制炎步二蛊的标准蛊方，主材偏向火道，适合二转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_huo_3_1",
+    "name": "炎念三蛊蛊方",
+    "rank": "三转",
+    "path": "火道",
+    "target": "炎念三蛊",
+    "targetGuId": "gu_huo_3_1",
+    "price": 96,
+    "guIds": [],
+    "materialIds": [
+      "mat_huo_3_1",
+      "mat_huo_3_2",
+      "mat_huo_2_3"
+    ],
+    "materials": "玄炎草×5、玄炎石×5、赤炎晶×5",
+    "note": "炼制炎念三蛊的标准蛊方，主材偏向火道，适合三转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_huo_3_2",
+    "name": "炎刺三蛊蛊方",
+    "rank": "三转",
+    "path": "火道",
+    "target": "炎刺三蛊",
+    "targetGuId": "gu_huo_3_2",
+    "price": 72,
+    "guIds": [],
+    "materialIds": [
+      "mat_huo_3_1",
+      "mat_huo_3_2",
+      "mat_huo_2_3"
+    ],
+    "materials": "玄炎草×5、玄炎石×5、赤炎晶×5",
+    "note": "炼制炎刺三蛊的标准蛊方，主材偏向火道，适合三转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_huo_4_1",
+    "name": "炎盾四蛊蛊方",
+    "rank": "四转",
+    "path": "火道",
+    "target": "炎盾四蛊",
+    "targetGuId": "gu_huo_4_1",
+    "price": 420,
+    "guIds": [],
+    "materialIds": [
+      "mat_huo_4_1",
+      "mat_huo_4_2",
+      "mat_huo_3_3"
+    ],
+    "materials": "灵炎草×6、灵炎石×6、玄炎晶×6",
+    "note": "炼制炎盾四蛊的标准蛊方，主材偏向火道，适合四转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_huo_4_2",
+    "name": "炎魄四蛊蛊方",
+    "rank": "四转",
+    "path": "火道",
+    "target": "炎魄四蛊",
+    "targetGuId": "gu_huo_4_2",
+    "price": 315,
+    "guIds": [],
+    "materialIds": [
+      "mat_huo_4_1",
+      "mat_huo_4_2",
+      "mat_huo_3_3"
+    ],
+    "materials": "灵炎草×6、灵炎石×6、玄炎晶×6",
+    "note": "炼制炎魄四蛊的标准蛊方，主材偏向火道，适合四转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_huo_5_1",
+    "name": "炎影五蛊蛊方",
+    "rank": "五转",
+    "path": "火道",
+    "target": "炎影五蛊",
+    "targetGuId": "gu_huo_5_1",
+    "price": 1440,
+    "guIds": [],
+    "materialIds": [
+      "mat_huo_5_1",
+      "mat_huo_5_2",
+      "mat_huo_4_3"
+    ],
+    "materials": "王炎草×7、王炎石×7、灵炎晶×7",
+    "note": "炼制炎影五蛊的标准蛊方，主材偏向火道，适合五转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_huo_5_2",
+    "name": "炎心五蛊蛊方",
+    "rank": "五转",
+    "path": "火道",
+    "target": "炎心五蛊",
+    "targetGuId": "gu_huo_5_2",
+    "price": 1080,
+    "guIds": [],
+    "materialIds": [
+      "mat_huo_5_1",
+      "mat_huo_5_2",
+      "mat_huo_4_3"
+    ],
+    "materials": "王炎草×7、王炎石×7、灵炎晶×7",
+    "note": "炼制炎心五蛊的标准蛊方，主材偏向火道，适合五转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_lei_1_1",
+    "name": "雷刃蛊蛊方",
+    "rank": "一转",
+    "path": "雷道",
+    "target": "雷刃蛊",
+    "targetGuId": "gu_lei_1_1",
+    "price": 10,
+    "guIds": [],
+    "materialIds": [
+      "mat_lei_1_1",
+      "mat_lei_1_2"
+    ],
+    "materials": "初雷草×3、初雷石×3",
+    "note": "炼制雷刃蛊的标准蛊方，主材偏向雷道，适合一转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_lei_1_2",
+    "name": "雷甲蛊蛊方",
+    "rank": "一转",
+    "path": "雷道",
+    "target": "雷甲蛊",
+    "targetGuId": "gu_lei_1_2",
+    "price": 10,
+    "guIds": [],
+    "materialIds": [
+      "mat_lei_1_1",
+      "mat_lei_1_2"
+    ],
+    "materials": "初雷草×3、初雷石×3",
+    "note": "炼制雷甲蛊的标准蛊方，主材偏向雷道，适合一转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_lei_2_1",
+    "name": "雷息二蛊蛊方",
+    "rank": "二转",
+    "path": "雷道",
+    "target": "雷息二蛊",
+    "targetGuId": "gu_lei_2_1",
+    "price": 24,
+    "guIds": [],
+    "materialIds": [
+      "mat_lei_2_1",
+      "mat_lei_2_2",
+      "mat_lei_1_3"
+    ],
+    "materials": "赤雷草×4、赤雷石×4、初雷晶×4",
+    "note": "炼制雷息二蛊的标准蛊方，主材偏向雷道，适合二转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_lei_2_2",
+    "name": "雷步二蛊蛊方",
+    "rank": "二转",
+    "path": "雷道",
+    "target": "雷步二蛊",
+    "targetGuId": "gu_lei_2_2",
+    "price": 18,
+    "guIds": [],
+    "materialIds": [
+      "mat_lei_2_1",
+      "mat_lei_2_2",
+      "mat_lei_1_3"
+    ],
+    "materials": "赤雷草×4、赤雷石×4、初雷晶×4",
+    "note": "炼制雷步二蛊的标准蛊方，主材偏向雷道，适合二转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_lei_3_1",
+    "name": "雷念三蛊蛊方",
+    "rank": "三转",
+    "path": "雷道",
+    "target": "雷念三蛊",
+    "targetGuId": "gu_lei_3_1",
+    "price": 96,
+    "guIds": [],
+    "materialIds": [
+      "mat_lei_3_1",
+      "mat_lei_3_2",
+      "mat_lei_2_3"
+    ],
+    "materials": "玄雷草×5、玄雷石×5、赤雷晶×5",
+    "note": "炼制雷念三蛊的标准蛊方，主材偏向雷道，适合三转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_lei_3_2",
+    "name": "雷刺三蛊蛊方",
+    "rank": "三转",
+    "path": "雷道",
+    "target": "雷刺三蛊",
+    "targetGuId": "gu_lei_3_2",
+    "price": 72,
+    "guIds": [],
+    "materialIds": [
+      "mat_lei_3_1",
+      "mat_lei_3_2",
+      "mat_lei_2_3"
+    ],
+    "materials": "玄雷草×5、玄雷石×5、赤雷晶×5",
+    "note": "炼制雷刺三蛊的标准蛊方，主材偏向雷道，适合三转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_lei_4_1",
+    "name": "雷盾四蛊蛊方",
+    "rank": "四转",
+    "path": "雷道",
+    "target": "雷盾四蛊",
+    "targetGuId": "gu_lei_4_1",
+    "price": 420,
+    "guIds": [],
+    "materialIds": [
+      "mat_lei_4_1",
+      "mat_lei_4_2",
+      "mat_lei_3_3"
+    ],
+    "materials": "灵雷草×6、灵雷石×6、玄雷晶×6",
+    "note": "炼制雷盾四蛊的标准蛊方，主材偏向雷道，适合四转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_lei_4_2",
+    "name": "雷魄四蛊蛊方",
+    "rank": "四转",
+    "path": "雷道",
+    "target": "雷魄四蛊",
+    "targetGuId": "gu_lei_4_2",
+    "price": 315,
+    "guIds": [],
+    "materialIds": [
+      "mat_lei_4_1",
+      "mat_lei_4_2",
+      "mat_lei_3_3"
+    ],
+    "materials": "灵雷草×6、灵雷石×6、玄雷晶×6",
+    "note": "炼制雷魄四蛊的标准蛊方，主材偏向雷道，适合四转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_lei_5_1",
+    "name": "雷影五蛊蛊方",
+    "rank": "五转",
+    "path": "雷道",
+    "target": "雷影五蛊",
+    "targetGuId": "gu_lei_5_1",
+    "price": 1440,
+    "guIds": [],
+    "materialIds": [
+      "mat_lei_5_1",
+      "mat_lei_5_2",
+      "mat_lei_4_3"
+    ],
+    "materials": "王雷草×7、王雷石×7、灵雷晶×7",
+    "note": "炼制雷影五蛊的标准蛊方，主材偏向雷道，适合五转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_lei_5_2",
+    "name": "雷心五蛊蛊方",
+    "rank": "五转",
+    "path": "雷道",
+    "target": "雷心五蛊",
+    "targetGuId": "gu_lei_5_2",
+    "price": 1080,
+    "guIds": [],
+    "materialIds": [
+      "mat_lei_5_1",
+      "mat_lei_5_2",
+      "mat_lei_4_3"
+    ],
+    "materials": "王雷草×7、王雷石×7、灵雷晶×7",
+    "note": "炼制雷心五蛊的标准蛊方，主材偏向雷道，适合五转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_hun_1_1",
+    "name": "魂刃蛊蛊方",
+    "rank": "一转",
+    "path": "魂道",
+    "target": "魂刃蛊",
+    "targetGuId": "gu_hun_1_1",
+    "price": 10,
+    "guIds": [],
+    "materialIds": [
+      "mat_hun_1_1",
+      "mat_hun_1_2"
+    ],
+    "materials": "初魂草×3、初魂石×3",
+    "note": "炼制魂刃蛊的标准蛊方，主材偏向魂道，适合一转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_hun_1_2",
+    "name": "魂甲蛊蛊方",
+    "rank": "一转",
+    "path": "魂道",
+    "target": "魂甲蛊",
+    "targetGuId": "gu_hun_1_2",
+    "price": 10,
+    "guIds": [],
+    "materialIds": [
+      "mat_hun_1_1",
+      "mat_hun_1_2"
+    ],
+    "materials": "初魂草×3、初魂石×3",
+    "note": "炼制魂甲蛊的标准蛊方，主材偏向魂道，适合一转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_hun_2_1",
+    "name": "魂息二蛊蛊方",
+    "rank": "二转",
+    "path": "魂道",
+    "target": "魂息二蛊",
+    "targetGuId": "gu_hun_2_1",
+    "price": 24,
+    "guIds": [],
+    "materialIds": [
+      "mat_hun_2_1",
+      "mat_hun_2_2",
+      "mat_hun_1_3"
+    ],
+    "materials": "赤魂草×4、赤魂石×4、初魂晶×4",
+    "note": "炼制魂息二蛊的标准蛊方，主材偏向魂道，适合二转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_hun_2_2",
+    "name": "魂步二蛊蛊方",
+    "rank": "二转",
+    "path": "魂道",
+    "target": "魂步二蛊",
+    "targetGuId": "gu_hun_2_2",
+    "price": 18,
+    "guIds": [],
+    "materialIds": [
+      "mat_hun_2_1",
+      "mat_hun_2_2",
+      "mat_hun_1_3"
+    ],
+    "materials": "赤魂草×4、赤魂石×4、初魂晶×4",
+    "note": "炼制魂步二蛊的标准蛊方，主材偏向魂道，适合二转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_hun_3_1",
+    "name": "魂念三蛊蛊方",
+    "rank": "三转",
+    "path": "魂道",
+    "target": "魂念三蛊",
+    "targetGuId": "gu_hun_3_1",
+    "price": 96,
+    "guIds": [],
+    "materialIds": [
+      "mat_hun_3_1",
+      "mat_hun_3_2",
+      "mat_hun_2_3"
+    ],
+    "materials": "玄魂草×5、玄魂石×5、赤魂晶×5",
+    "note": "炼制魂念三蛊的标准蛊方，主材偏向魂道，适合三转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_hun_3_2",
+    "name": "魂刺三蛊蛊方",
+    "rank": "三转",
+    "path": "魂道",
+    "target": "魂刺三蛊",
+    "targetGuId": "gu_hun_3_2",
+    "price": 72,
+    "guIds": [],
+    "materialIds": [
+      "mat_hun_3_1",
+      "mat_hun_3_2",
+      "mat_hun_2_3"
+    ],
+    "materials": "玄魂草×5、玄魂石×5、赤魂晶×5",
+    "note": "炼制魂刺三蛊的标准蛊方，主材偏向魂道，适合三转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_hun_4_1",
+    "name": "魂盾四蛊蛊方",
+    "rank": "四转",
+    "path": "魂道",
+    "target": "魂盾四蛊",
+    "targetGuId": "gu_hun_4_1",
+    "price": 420,
+    "guIds": [],
+    "materialIds": [
+      "mat_hun_4_1",
+      "mat_hun_4_2",
+      "mat_hun_3_3"
+    ],
+    "materials": "灵魂草×6、灵魂石×6、玄魂晶×6",
+    "note": "炼制魂盾四蛊的标准蛊方，主材偏向魂道，适合四转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_hun_4_2",
+    "name": "魂魄四蛊蛊方",
+    "rank": "四转",
+    "path": "魂道",
+    "target": "魂魄四蛊",
+    "targetGuId": "gu_hun_4_2",
+    "price": 315,
+    "guIds": [],
+    "materialIds": [
+      "mat_hun_4_1",
+      "mat_hun_4_2",
+      "mat_hun_3_3"
+    ],
+    "materials": "灵魂草×6、灵魂石×6、玄魂晶×6",
+    "note": "炼制魂魄四蛊的标准蛊方，主材偏向魂道，适合四转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_hun_5_1",
+    "name": "魂影五蛊蛊方",
+    "rank": "五转",
+    "path": "魂道",
+    "target": "魂影五蛊",
+    "targetGuId": "gu_hun_5_1",
+    "price": 1440,
+    "guIds": [],
+    "materialIds": [
+      "mat_hun_5_1",
+      "mat_hun_5_2",
+      "mat_hun_4_3"
+    ],
+    "materials": "王魂草×7、王魂石×7、灵魂晶×7",
+    "note": "炼制魂影五蛊的标准蛊方，主材偏向魂道，适合五转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_hun_5_2",
+    "name": "魂心五蛊蛊方",
+    "rank": "五转",
+    "path": "魂道",
+    "target": "魂心五蛊",
+    "targetGuId": "gu_hun_5_2",
+    "price": 1080,
+    "guIds": [],
+    "materialIds": [
+      "mat_hun_5_1",
+      "mat_hun_5_2",
+      "mat_hun_4_3"
+    ],
+    "materials": "王魂草×7、王魂石×7、灵魂晶×7",
+    "note": "炼制魂心五蛊的标准蛊方，主材偏向魂道，适合五转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_tian_1_1",
+    "name": "天刃蛊蛊方",
+    "rank": "一转",
+    "path": "天道",
+    "target": "天刃蛊",
+    "targetGuId": "gu_tian_1_1",
+    "price": 10,
+    "guIds": [],
+    "materialIds": [
+      "mat_tian_1_1",
+      "mat_tian_1_2"
+    ],
+    "materials": "初天草×3、初天石×3",
+    "note": "炼制天刃蛊的标准蛊方，主材偏向天道，适合一转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_tian_1_2",
+    "name": "天甲蛊蛊方",
+    "rank": "一转",
+    "path": "天道",
+    "target": "天甲蛊",
+    "targetGuId": "gu_tian_1_2",
+    "price": 10,
+    "guIds": [],
+    "materialIds": [
+      "mat_tian_1_1",
+      "mat_tian_1_2"
+    ],
+    "materials": "初天草×3、初天石×3",
+    "note": "炼制天甲蛊的标准蛊方，主材偏向天道，适合一转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_tian_2_1",
+    "name": "天息二蛊蛊方",
+    "rank": "二转",
+    "path": "天道",
+    "target": "天息二蛊",
+    "targetGuId": "gu_tian_2_1",
+    "price": 24,
+    "guIds": [],
+    "materialIds": [
+      "mat_tian_2_1",
+      "mat_tian_2_2",
+      "mat_tian_1_3"
+    ],
+    "materials": "赤天草×4、赤天石×4、初天晶×4",
+    "note": "炼制天息二蛊的标准蛊方，主材偏向天道，适合二转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_tian_2_2",
+    "name": "天步二蛊蛊方",
+    "rank": "二转",
+    "path": "天道",
+    "target": "天步二蛊",
+    "targetGuId": "gu_tian_2_2",
+    "price": 18,
+    "guIds": [],
+    "materialIds": [
+      "mat_tian_2_1",
+      "mat_tian_2_2",
+      "mat_tian_1_3"
+    ],
+    "materials": "赤天草×4、赤天石×4、初天晶×4",
+    "note": "炼制天步二蛊的标准蛊方，主材偏向天道，适合二转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_tian_3_1",
+    "name": "天念三蛊蛊方",
+    "rank": "三转",
+    "path": "天道",
+    "target": "天念三蛊",
+    "targetGuId": "gu_tian_3_1",
+    "price": 96,
+    "guIds": [],
+    "materialIds": [
+      "mat_tian_3_1",
+      "mat_tian_3_2",
+      "mat_tian_2_3"
+    ],
+    "materials": "玄天草×5、玄天石×5、赤天晶×5",
+    "note": "炼制天念三蛊的标准蛊方，主材偏向天道，适合三转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_tian_3_2",
+    "name": "天刺三蛊蛊方",
+    "rank": "三转",
+    "path": "天道",
+    "target": "天刺三蛊",
+    "targetGuId": "gu_tian_3_2",
+    "price": 72,
+    "guIds": [],
+    "materialIds": [
+      "mat_tian_3_1",
+      "mat_tian_3_2",
+      "mat_tian_2_3"
+    ],
+    "materials": "玄天草×5、玄天石×5、赤天晶×5",
+    "note": "炼制天刺三蛊的标准蛊方，主材偏向天道，适合三转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_tian_4_1",
+    "name": "天盾四蛊蛊方",
+    "rank": "四转",
+    "path": "天道",
+    "target": "天盾四蛊",
+    "targetGuId": "gu_tian_4_1",
+    "price": 420,
+    "guIds": [],
+    "materialIds": [
+      "mat_tian_4_1",
+      "mat_tian_4_2",
+      "mat_tian_3_3"
+    ],
+    "materials": "灵天草×6、灵天石×6、玄天晶×6",
+    "note": "炼制天盾四蛊的标准蛊方，主材偏向天道，适合四转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_tian_4_2",
+    "name": "天魄四蛊蛊方",
+    "rank": "四转",
+    "path": "天道",
+    "target": "天魄四蛊",
+    "targetGuId": "gu_tian_4_2",
+    "price": 315,
+    "guIds": [],
+    "materialIds": [
+      "mat_tian_4_1",
+      "mat_tian_4_2",
+      "mat_tian_3_3"
+    ],
+    "materials": "灵天草×6、灵天石×6、玄天晶×6",
+    "note": "炼制天魄四蛊的标准蛊方，主材偏向天道，适合四转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_tian_5_1",
+    "name": "天影五蛊蛊方",
+    "rank": "五转",
+    "path": "天道",
+    "target": "天影五蛊",
+    "targetGuId": "gu_tian_5_1",
+    "price": 1440,
+    "guIds": [],
+    "materialIds": [
+      "mat_tian_5_1",
+      "mat_tian_5_2",
+      "mat_tian_4_3"
+    ],
+    "materials": "王天草×7、王天石×7、灵天晶×7",
+    "note": "炼制天影五蛊的标准蛊方，主材偏向天道，适合五转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_tian_5_2",
+    "name": "天心五蛊蛊方",
+    "rank": "五转",
+    "path": "天道",
+    "target": "天心五蛊",
+    "targetGuId": "gu_tian_5_2",
+    "price": 1080,
+    "guIds": [],
+    "materialIds": [
+      "mat_tian_5_1",
+      "mat_tian_5_2",
+      "mat_tian_4_3"
+    ],
+    "materials": "王天草×7、王天石×7、灵天晶×7",
+    "note": "炼制天心五蛊的标准蛊方，主材偏向天道，适合五转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_yunqi_1_1",
+    "name": "运刃蛊蛊方",
+    "rank": "一转",
+    "path": "运道",
+    "target": "运刃蛊",
+    "targetGuId": "gu_yunqi_1_1",
+    "price": 10,
+    "guIds": [],
+    "materialIds": [
+      "mat_yunqi_1_1",
+      "mat_yunqi_1_2"
+    ],
+    "materials": "初运草×3、初运石×3",
+    "note": "炼制运刃蛊的标准蛊方，主材偏向运道，适合一转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_yunqi_1_2",
+    "name": "运甲蛊蛊方",
+    "rank": "一转",
+    "path": "运道",
+    "target": "运甲蛊",
+    "targetGuId": "gu_yunqi_1_2",
+    "price": 10,
+    "guIds": [],
+    "materialIds": [
+      "mat_yunqi_1_1",
+      "mat_yunqi_1_2"
+    ],
+    "materials": "初运草×3、初运石×3",
+    "note": "炼制运甲蛊的标准蛊方，主材偏向运道，适合一转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_yunqi_2_1",
+    "name": "运息二蛊蛊方",
+    "rank": "二转",
+    "path": "运道",
+    "target": "运息二蛊",
+    "targetGuId": "gu_yunqi_2_1",
+    "price": 24,
+    "guIds": [],
+    "materialIds": [
+      "mat_yunqi_2_1",
+      "mat_yunqi_2_2",
+      "mat_yunqi_1_3"
+    ],
+    "materials": "赤运草×4、赤运石×4、初运晶×4",
+    "note": "炼制运息二蛊的标准蛊方，主材偏向运道，适合二转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_yunqi_2_2",
+    "name": "运步二蛊蛊方",
+    "rank": "二转",
+    "path": "运道",
+    "target": "运步二蛊",
+    "targetGuId": "gu_yunqi_2_2",
+    "price": 18,
+    "guIds": [],
+    "materialIds": [
+      "mat_yunqi_2_1",
+      "mat_yunqi_2_2",
+      "mat_yunqi_1_3"
+    ],
+    "materials": "赤运草×4、赤运石×4、初运晶×4",
+    "note": "炼制运步二蛊的标准蛊方，主材偏向运道，适合二转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_yunqi_3_1",
+    "name": "运念三蛊蛊方",
+    "rank": "三转",
+    "path": "运道",
+    "target": "运念三蛊",
+    "targetGuId": "gu_yunqi_3_1",
+    "price": 96,
+    "guIds": [],
+    "materialIds": [
+      "mat_yunqi_3_1",
+      "mat_yunqi_3_2",
+      "mat_yunqi_2_3"
+    ],
+    "materials": "玄运草×5、玄运石×5、赤运晶×5",
+    "note": "炼制运念三蛊的标准蛊方，主材偏向运道，适合三转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_yunqi_3_2",
+    "name": "运刺三蛊蛊方",
+    "rank": "三转",
+    "path": "运道",
+    "target": "运刺三蛊",
+    "targetGuId": "gu_yunqi_3_2",
+    "price": 72,
+    "guIds": [],
+    "materialIds": [
+      "mat_yunqi_3_1",
+      "mat_yunqi_3_2",
+      "mat_yunqi_2_3"
+    ],
+    "materials": "玄运草×5、玄运石×5、赤运晶×5",
+    "note": "炼制运刺三蛊的标准蛊方，主材偏向运道，适合三转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_yunqi_4_1",
+    "name": "运盾四蛊蛊方",
+    "rank": "四转",
+    "path": "运道",
+    "target": "运盾四蛊",
+    "targetGuId": "gu_yunqi_4_1",
+    "price": 420,
+    "guIds": [],
+    "materialIds": [
+      "mat_yunqi_4_1",
+      "mat_yunqi_4_2",
+      "mat_yunqi_3_3"
+    ],
+    "materials": "灵运草×6、灵运石×6、玄运晶×6",
+    "note": "炼制运盾四蛊的标准蛊方，主材偏向运道，适合四转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_yunqi_4_2",
+    "name": "运魄四蛊蛊方",
+    "rank": "四转",
+    "path": "运道",
+    "target": "运魄四蛊",
+    "targetGuId": "gu_yunqi_4_2",
+    "price": 315,
+    "guIds": [],
+    "materialIds": [
+      "mat_yunqi_4_1",
+      "mat_yunqi_4_2",
+      "mat_yunqi_3_3"
+    ],
+    "materials": "灵运草×6、灵运石×6、玄运晶×6",
+    "note": "炼制运魄四蛊的标准蛊方，主材偏向运道，适合四转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_yunqi_5_1",
+    "name": "运影五蛊蛊方",
+    "rank": "五转",
+    "path": "运道",
+    "target": "运影五蛊",
+    "targetGuId": "gu_yunqi_5_1",
+    "price": 1440,
+    "guIds": [],
+    "materialIds": [
+      "mat_yunqi_5_1",
+      "mat_yunqi_5_2",
+      "mat_yunqi_4_3"
+    ],
+    "materials": "王运草×7、王运石×7、灵运晶×7",
+    "note": "炼制运影五蛊的标准蛊方，主材偏向运道，适合五转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_yunqi_5_2",
+    "name": "运心五蛊蛊方",
+    "rank": "五转",
+    "path": "运道",
+    "target": "运心五蛊",
+    "targetGuId": "gu_yunqi_5_2",
+    "price": 1080,
+    "guIds": [],
+    "materialIds": [
+      "mat_yunqi_5_1",
+      "mat_yunqi_5_2",
+      "mat_yunqi_4_3"
+    ],
+    "materials": "王运草×7、王运石×7、灵运晶×7",
+    "note": "炼制运心五蛊的标准蛊方，主材偏向运道，适合五转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_lian_1_1",
+    "name": "炉刃蛊蛊方",
+    "rank": "一转",
+    "path": "炼道",
+    "target": "炉刃蛊",
+    "targetGuId": "gu_lian_1_1",
+    "price": 10,
+    "guIds": [],
+    "materialIds": [
+      "mat_lian_1_1",
+      "mat_lian_1_2"
+    ],
+    "materials": "初炉草×3、初炉石×3",
+    "note": "炼制炉刃蛊的标准蛊方，主材偏向炼道，适合一转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_lian_1_2",
+    "name": "炉甲蛊蛊方",
+    "rank": "一转",
+    "path": "炼道",
+    "target": "炉甲蛊",
+    "targetGuId": "gu_lian_1_2",
+    "price": 10,
+    "guIds": [],
+    "materialIds": [
+      "mat_lian_1_1",
+      "mat_lian_1_2"
+    ],
+    "materials": "初炉草×3、初炉石×3",
+    "note": "炼制炉甲蛊的标准蛊方，主材偏向炼道，适合一转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_lian_2_1",
+    "name": "炉息二蛊蛊方",
+    "rank": "二转",
+    "path": "炼道",
+    "target": "炉息二蛊",
+    "targetGuId": "gu_lian_2_1",
+    "price": 24,
+    "guIds": [],
+    "materialIds": [
+      "mat_lian_2_1",
+      "mat_lian_2_2",
+      "mat_lian_1_3"
+    ],
+    "materials": "赤炉草×4、赤炉石×4、初炉晶×4",
+    "note": "炼制炉息二蛊的标准蛊方，主材偏向炼道，适合二转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_lian_2_2",
+    "name": "炉步二蛊蛊方",
+    "rank": "二转",
+    "path": "炼道",
+    "target": "炉步二蛊",
+    "targetGuId": "gu_lian_2_2",
+    "price": 18,
+    "guIds": [],
+    "materialIds": [
+      "mat_lian_2_1",
+      "mat_lian_2_2",
+      "mat_lian_1_3"
+    ],
+    "materials": "赤炉草×4、赤炉石×4、初炉晶×4",
+    "note": "炼制炉步二蛊的标准蛊方，主材偏向炼道，适合二转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_lian_3_1",
+    "name": "炉念三蛊蛊方",
+    "rank": "三转",
+    "path": "炼道",
+    "target": "炉念三蛊",
+    "targetGuId": "gu_lian_3_1",
+    "price": 96,
+    "guIds": [],
+    "materialIds": [
+      "mat_lian_3_1",
+      "mat_lian_3_2",
+      "mat_lian_2_3"
+    ],
+    "materials": "玄炉草×5、玄炉石×5、赤炉晶×5",
+    "note": "炼制炉念三蛊的标准蛊方，主材偏向炼道，适合三转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_lian_3_2",
+    "name": "炉刺三蛊蛊方",
+    "rank": "三转",
+    "path": "炼道",
+    "target": "炉刺三蛊",
+    "targetGuId": "gu_lian_3_2",
+    "price": 72,
+    "guIds": [],
+    "materialIds": [
+      "mat_lian_3_1",
+      "mat_lian_3_2",
+      "mat_lian_2_3"
+    ],
+    "materials": "玄炉草×5、玄炉石×5、赤炉晶×5",
+    "note": "炼制炉刺三蛊的标准蛊方，主材偏向炼道，适合三转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_lian_4_1",
+    "name": "炉盾四蛊蛊方",
+    "rank": "四转",
+    "path": "炼道",
+    "target": "炉盾四蛊",
+    "targetGuId": "gu_lian_4_1",
+    "price": 420,
+    "guIds": [],
+    "materialIds": [
+      "mat_lian_4_1",
+      "mat_lian_4_2",
+      "mat_lian_3_3"
+    ],
+    "materials": "灵炉草×6、灵炉石×6、玄炉晶×6",
+    "note": "炼制炉盾四蛊的标准蛊方，主材偏向炼道，适合四转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_lian_4_2",
+    "name": "炉魄四蛊蛊方",
+    "rank": "四转",
+    "path": "炼道",
+    "target": "炉魄四蛊",
+    "targetGuId": "gu_lian_4_2",
+    "price": 315,
+    "guIds": [],
+    "materialIds": [
+      "mat_lian_4_1",
+      "mat_lian_4_2",
+      "mat_lian_3_3"
+    ],
+    "materials": "灵炉草×6、灵炉石×6、玄炉晶×6",
+    "note": "炼制炉魄四蛊的标准蛊方，主材偏向炼道，适合四转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_lian_5_1",
+    "name": "炉影五蛊蛊方",
+    "rank": "五转",
+    "path": "炼道",
+    "target": "炉影五蛊",
+    "targetGuId": "gu_lian_5_1",
+    "price": 1440,
+    "guIds": [],
+    "materialIds": [
+      "mat_lian_5_1",
+      "mat_lian_5_2",
+      "mat_lian_4_3"
+    ],
+    "materials": "王炉草×7、王炉石×7、灵炉晶×7",
+    "note": "炼制炉影五蛊的标准蛊方，主材偏向炼道，适合五转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_lian_5_2",
+    "name": "炉心五蛊蛊方",
+    "rank": "五转",
+    "path": "炼道",
+    "target": "炉心五蛊",
+    "targetGuId": "gu_lian_5_2",
+    "price": 1080,
+    "guIds": [],
+    "materialIds": [
+      "mat_lian_5_1",
+      "mat_lian_5_2",
+      "mat_lian_4_3"
+    ],
+    "materials": "王炉草×7、王炉石×7、灵炉晶×7",
+    "note": "炼制炉心五蛊的标准蛊方，主材偏向炼道，适合五转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_bian_1_1",
+    "name": "兽刃蛊蛊方",
+    "rank": "一转",
+    "path": "变化道",
+    "target": "兽刃蛊",
+    "targetGuId": "gu_bian_1_1",
+    "price": 10,
+    "guIds": [],
+    "materialIds": [
+      "mat_bian_1_1",
+      "mat_bian_1_2"
+    ],
+    "materials": "初兽草×3、初兽石×3",
+    "note": "炼制兽刃蛊的标准蛊方，主材偏向变化道，适合一转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_bian_1_2",
+    "name": "兽甲蛊蛊方",
+    "rank": "一转",
+    "path": "变化道",
+    "target": "兽甲蛊",
+    "targetGuId": "gu_bian_1_2",
+    "price": 10,
+    "guIds": [],
+    "materialIds": [
+      "mat_bian_1_1",
+      "mat_bian_1_2"
+    ],
+    "materials": "初兽草×3、初兽石×3",
+    "note": "炼制兽甲蛊的标准蛊方，主材偏向变化道，适合一转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_bian_2_1",
+    "name": "兽息二蛊蛊方",
+    "rank": "二转",
+    "path": "变化道",
+    "target": "兽息二蛊",
+    "targetGuId": "gu_bian_2_1",
+    "price": 24,
+    "guIds": [],
+    "materialIds": [
+      "mat_bian_2_1",
+      "mat_bian_2_2",
+      "mat_bian_1_3"
+    ],
+    "materials": "赤兽草×4、赤兽石×4、初兽晶×4",
+    "note": "炼制兽息二蛊的标准蛊方，主材偏向变化道，适合二转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_bian_2_2",
+    "name": "兽步二蛊蛊方",
+    "rank": "二转",
+    "path": "变化道",
+    "target": "兽步二蛊",
+    "targetGuId": "gu_bian_2_2",
+    "price": 18,
+    "guIds": [],
+    "materialIds": [
+      "mat_bian_2_1",
+      "mat_bian_2_2",
+      "mat_bian_1_3"
+    ],
+    "materials": "赤兽草×4、赤兽石×4、初兽晶×4",
+    "note": "炼制兽步二蛊的标准蛊方，主材偏向变化道，适合二转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_bian_3_1",
+    "name": "兽念三蛊蛊方",
+    "rank": "三转",
+    "path": "变化道",
+    "target": "兽念三蛊",
+    "targetGuId": "gu_bian_3_1",
+    "price": 96,
+    "guIds": [],
+    "materialIds": [
+      "mat_bian_3_1",
+      "mat_bian_3_2",
+      "mat_bian_2_3"
+    ],
+    "materials": "玄兽草×5、玄兽石×5、赤兽晶×5",
+    "note": "炼制兽念三蛊的标准蛊方，主材偏向变化道，适合三转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_bian_3_2",
+    "name": "兽刺三蛊蛊方",
+    "rank": "三转",
+    "path": "变化道",
+    "target": "兽刺三蛊",
+    "targetGuId": "gu_bian_3_2",
+    "price": 72,
+    "guIds": [],
+    "materialIds": [
+      "mat_bian_3_1",
+      "mat_bian_3_2",
+      "mat_bian_2_3"
+    ],
+    "materials": "玄兽草×5、玄兽石×5、赤兽晶×5",
+    "note": "炼制兽刺三蛊的标准蛊方，主材偏向变化道，适合三转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_bian_4_1",
+    "name": "兽盾四蛊蛊方",
+    "rank": "四转",
+    "path": "变化道",
+    "target": "兽盾四蛊",
+    "targetGuId": "gu_bian_4_1",
+    "price": 420,
+    "guIds": [],
+    "materialIds": [
+      "mat_bian_4_1",
+      "mat_bian_4_2",
+      "mat_bian_3_3"
+    ],
+    "materials": "灵兽草×6、灵兽石×6、玄兽晶×6",
+    "note": "炼制兽盾四蛊的标准蛊方，主材偏向变化道，适合四转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_bian_4_2",
+    "name": "兽魄四蛊蛊方",
+    "rank": "四转",
+    "path": "变化道",
+    "target": "兽魄四蛊",
+    "targetGuId": "gu_bian_4_2",
+    "price": 315,
+    "guIds": [],
+    "materialIds": [
+      "mat_bian_4_1",
+      "mat_bian_4_2",
+      "mat_bian_3_3"
+    ],
+    "materials": "灵兽草×6、灵兽石×6、玄兽晶×6",
+    "note": "炼制兽魄四蛊的标准蛊方，主材偏向变化道，适合四转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_bian_5_1",
+    "name": "兽影五蛊蛊方",
+    "rank": "五转",
+    "path": "变化道",
+    "target": "兽影五蛊",
+    "targetGuId": "gu_bian_5_1",
+    "price": 1440,
+    "guIds": [],
+    "materialIds": [
+      "mat_bian_5_1",
+      "mat_bian_5_2",
+      "mat_bian_4_3"
+    ],
+    "materials": "王兽草×7、王兽石×7、灵兽晶×7",
+    "note": "炼制兽影五蛊的标准蛊方，主材偏向变化道，适合五转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_bian_5_2",
+    "name": "兽心五蛊蛊方",
+    "rank": "五转",
+    "path": "变化道",
+    "target": "兽心五蛊",
+    "targetGuId": "gu_bian_5_2",
+    "price": 1080,
+    "guIds": [],
+    "materialIds": [
+      "mat_bian_5_1",
+      "mat_bian_5_2",
+      "mat_bian_4_3"
+    ],
+    "materials": "王兽草×7、王兽石×7、灵兽晶×7",
+    "note": "炼制兽心五蛊的标准蛊方，主材偏向变化道，适合五转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_feng_1_1",
+    "name": "风刃蛊蛊方",
+    "rank": "一转",
+    "path": "风道",
+    "target": "风刃蛊",
+    "targetGuId": "gu_feng_1_1",
+    "price": 10,
+    "guIds": [],
+    "materialIds": [
+      "mat_feng_1_1",
+      "mat_feng_1_2"
+    ],
+    "materials": "初风草×3、初风石×3",
+    "note": "炼制风刃蛊的标准蛊方，主材偏向风道，适合一转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_feng_1_2",
+    "name": "风甲蛊蛊方",
+    "rank": "一转",
+    "path": "风道",
+    "target": "风甲蛊",
+    "targetGuId": "gu_feng_1_2",
+    "price": 10,
+    "guIds": [],
+    "materialIds": [
+      "mat_feng_1_1",
+      "mat_feng_1_2"
+    ],
+    "materials": "初风草×3、初风石×3",
+    "note": "炼制风甲蛊的标准蛊方，主材偏向风道，适合一转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_feng_2_1",
+    "name": "风息二蛊蛊方",
+    "rank": "二转",
+    "path": "风道",
+    "target": "风息二蛊",
+    "targetGuId": "gu_feng_2_1",
+    "price": 24,
+    "guIds": [],
+    "materialIds": [
+      "mat_feng_2_1",
+      "mat_feng_2_2",
+      "mat_feng_1_3"
+    ],
+    "materials": "赤风草×4、赤风石×4、初风晶×4",
+    "note": "炼制风息二蛊的标准蛊方，主材偏向风道，适合二转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_feng_2_2",
+    "name": "风步二蛊蛊方",
+    "rank": "二转",
+    "path": "风道",
+    "target": "风步二蛊",
+    "targetGuId": "gu_feng_2_2",
+    "price": 18,
+    "guIds": [],
+    "materialIds": [
+      "mat_feng_2_1",
+      "mat_feng_2_2",
+      "mat_feng_1_3"
+    ],
+    "materials": "赤风草×4、赤风石×4、初风晶×4",
+    "note": "炼制风步二蛊的标准蛊方，主材偏向风道，适合二转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_feng_3_1",
+    "name": "风念三蛊蛊方",
+    "rank": "三转",
+    "path": "风道",
+    "target": "风念三蛊",
+    "targetGuId": "gu_feng_3_1",
+    "price": 96,
+    "guIds": [],
+    "materialIds": [
+      "mat_feng_3_1",
+      "mat_feng_3_2",
+      "mat_feng_2_3"
+    ],
+    "materials": "玄风草×5、玄风石×5、赤风晶×5",
+    "note": "炼制风念三蛊的标准蛊方，主材偏向风道，适合三转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_feng_3_2",
+    "name": "风刺三蛊蛊方",
+    "rank": "三转",
+    "path": "风道",
+    "target": "风刺三蛊",
+    "targetGuId": "gu_feng_3_2",
+    "price": 72,
+    "guIds": [],
+    "materialIds": [
+      "mat_feng_3_1",
+      "mat_feng_3_2",
+      "mat_feng_2_3"
+    ],
+    "materials": "玄风草×5、玄风石×5、赤风晶×5",
+    "note": "炼制风刺三蛊的标准蛊方，主材偏向风道，适合三转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_feng_4_1",
+    "name": "风盾四蛊蛊方",
+    "rank": "四转",
+    "path": "风道",
+    "target": "风盾四蛊",
+    "targetGuId": "gu_feng_4_1",
+    "price": 420,
+    "guIds": [],
+    "materialIds": [
+      "mat_feng_4_1",
+      "mat_feng_4_2",
+      "mat_feng_3_3"
+    ],
+    "materials": "灵风草×6、灵风石×6、玄风晶×6",
+    "note": "炼制风盾四蛊的标准蛊方，主材偏向风道，适合四转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_feng_4_2",
+    "name": "风魄四蛊蛊方",
+    "rank": "四转",
+    "path": "风道",
+    "target": "风魄四蛊",
+    "targetGuId": "gu_feng_4_2",
+    "price": 315,
+    "guIds": [],
+    "materialIds": [
+      "mat_feng_4_1",
+      "mat_feng_4_2",
+      "mat_feng_3_3"
+    ],
+    "materials": "灵风草×6、灵风石×6、玄风晶×6",
+    "note": "炼制风魄四蛊的标准蛊方，主材偏向风道，适合四转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_feng_5_1",
+    "name": "风影五蛊蛊方",
+    "rank": "五转",
+    "path": "风道",
+    "target": "风影五蛊",
+    "targetGuId": "gu_feng_5_1",
+    "price": 1440,
+    "guIds": [],
+    "materialIds": [
+      "mat_feng_5_1",
+      "mat_feng_5_2",
+      "mat_feng_4_3"
+    ],
+    "materials": "王风草×7、王风石×7、灵风晶×7",
+    "note": "炼制风影五蛊的标准蛊方，主材偏向风道，适合五转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_feng_5_2",
+    "name": "风心五蛊蛊方",
+    "rank": "五转",
+    "path": "风道",
+    "target": "风心五蛊",
+    "targetGuId": "gu_feng_5_2",
+    "price": 1080,
+    "guIds": [],
+    "materialIds": [
+      "mat_feng_5_1",
+      "mat_feng_5_2",
+      "mat_feng_4_3"
+    ],
+    "materials": "王风草×7、王风石×7、灵风晶×7",
+    "note": "炼制风心五蛊的标准蛊方，主材偏向风道，适合五转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_sha_1_1",
+    "name": "沙刃蛊蛊方",
+    "rank": "一转",
+    "path": "沙道",
+    "target": "沙刃蛊",
+    "targetGuId": "gu_sha_1_1",
+    "price": 10,
+    "guIds": [],
+    "materialIds": [
+      "mat_sha_1_1",
+      "mat_sha_1_2"
+    ],
+    "materials": "初沙草×3、初沙石×3",
+    "note": "炼制沙刃蛊的标准蛊方，主材偏向沙道，适合一转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_sha_1_2",
+    "name": "沙甲蛊蛊方",
+    "rank": "一转",
+    "path": "沙道",
+    "target": "沙甲蛊",
+    "targetGuId": "gu_sha_1_2",
+    "price": 10,
+    "guIds": [],
+    "materialIds": [
+      "mat_sha_1_1",
+      "mat_sha_1_2"
+    ],
+    "materials": "初沙草×3、初沙石×3",
+    "note": "炼制沙甲蛊的标准蛊方，主材偏向沙道，适合一转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_sha_2_1",
+    "name": "沙息二蛊蛊方",
+    "rank": "二转",
+    "path": "沙道",
+    "target": "沙息二蛊",
+    "targetGuId": "gu_sha_2_1",
+    "price": 24,
+    "guIds": [],
+    "materialIds": [
+      "mat_sha_2_1",
+      "mat_sha_2_2",
+      "mat_sha_1_3"
+    ],
+    "materials": "赤沙草×4、赤沙石×4、初沙晶×4",
+    "note": "炼制沙息二蛊的标准蛊方，主材偏向沙道，适合二转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_sha_2_2",
+    "name": "沙步二蛊蛊方",
+    "rank": "二转",
+    "path": "沙道",
+    "target": "沙步二蛊",
+    "targetGuId": "gu_sha_2_2",
+    "price": 18,
+    "guIds": [],
+    "materialIds": [
+      "mat_sha_2_1",
+      "mat_sha_2_2",
+      "mat_sha_1_3"
+    ],
+    "materials": "赤沙草×4、赤沙石×4、初沙晶×4",
+    "note": "炼制沙步二蛊的标准蛊方，主材偏向沙道，适合二转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_sha_3_1",
+    "name": "沙念三蛊蛊方",
+    "rank": "三转",
+    "path": "沙道",
+    "target": "沙念三蛊",
+    "targetGuId": "gu_sha_3_1",
+    "price": 96,
+    "guIds": [],
+    "materialIds": [
+      "mat_sha_3_1",
+      "mat_sha_3_2",
+      "mat_sha_2_3"
+    ],
+    "materials": "玄沙草×5、玄沙石×5、赤沙晶×5",
+    "note": "炼制沙念三蛊的标准蛊方，主材偏向沙道，适合三转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_sha_3_2",
+    "name": "沙刺三蛊蛊方",
+    "rank": "三转",
+    "path": "沙道",
+    "target": "沙刺三蛊",
+    "targetGuId": "gu_sha_3_2",
+    "price": 72,
+    "guIds": [],
+    "materialIds": [
+      "mat_sha_3_1",
+      "mat_sha_3_2",
+      "mat_sha_2_3"
+    ],
+    "materials": "玄沙草×5、玄沙石×5、赤沙晶×5",
+    "note": "炼制沙刺三蛊的标准蛊方，主材偏向沙道，适合三转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_sha_4_1",
+    "name": "沙盾四蛊蛊方",
+    "rank": "四转",
+    "path": "沙道",
+    "target": "沙盾四蛊",
+    "targetGuId": "gu_sha_4_1",
+    "price": 420,
+    "guIds": [],
+    "materialIds": [
+      "mat_sha_4_1",
+      "mat_sha_4_2",
+      "mat_sha_3_3"
+    ],
+    "materials": "灵沙草×6、灵沙石×6、玄沙晶×6",
+    "note": "炼制沙盾四蛊的标准蛊方，主材偏向沙道，适合四转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_sha_4_2",
+    "name": "沙魄四蛊蛊方",
+    "rank": "四转",
+    "path": "沙道",
+    "target": "沙魄四蛊",
+    "targetGuId": "gu_sha_4_2",
+    "price": 315,
+    "guIds": [],
+    "materialIds": [
+      "mat_sha_4_1",
+      "mat_sha_4_2",
+      "mat_sha_3_3"
+    ],
+    "materials": "灵沙草×6、灵沙石×6、玄沙晶×6",
+    "note": "炼制沙魄四蛊的标准蛊方，主材偏向沙道，适合四转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_sha_5_1",
+    "name": "沙影五蛊蛊方",
+    "rank": "五转",
+    "path": "沙道",
+    "target": "沙影五蛊",
+    "targetGuId": "gu_sha_5_1",
+    "price": 1440,
+    "guIds": [],
+    "materialIds": [
+      "mat_sha_5_1",
+      "mat_sha_5_2",
+      "mat_sha_4_3"
+    ],
+    "materials": "王沙草×7、王沙石×7、灵沙晶×7",
+    "note": "炼制沙影五蛊的标准蛊方，主材偏向沙道，适合五转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_sha_5_2",
+    "name": "沙心五蛊蛊方",
+    "rank": "五转",
+    "path": "沙道",
+    "target": "沙心五蛊",
+    "targetGuId": "gu_sha_5_2",
+    "price": 1080,
+    "guIds": [],
+    "materialIds": [
+      "mat_sha_5_1",
+      "mat_sha_5_2",
+      "mat_sha_4_3"
+    ],
+    "materials": "王沙草×7、王沙石×7、灵沙晶×7",
+    "note": "炼制沙心五蛊的标准蛊方，主材偏向沙道，适合五转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_qi_1_1",
+    "name": "气刃蛊蛊方",
+    "rank": "一转",
+    "path": "气道",
+    "target": "气刃蛊",
+    "targetGuId": "gu_qi_1_1",
+    "price": 10,
+    "guIds": [],
+    "materialIds": [
+      "mat_qi_1_1",
+      "mat_qi_1_2"
+    ],
+    "materials": "初气草×3、初气石×3",
+    "note": "炼制气刃蛊的标准蛊方，主材偏向气道，适合一转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_qi_1_2",
+    "name": "气甲蛊蛊方",
+    "rank": "一转",
+    "path": "气道",
+    "target": "气甲蛊",
+    "targetGuId": "gu_qi_1_2",
+    "price": 10,
+    "guIds": [],
+    "materialIds": [
+      "mat_qi_1_1",
+      "mat_qi_1_2"
+    ],
+    "materials": "初气草×3、初气石×3",
+    "note": "炼制气甲蛊的标准蛊方，主材偏向气道，适合一转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_qi_2_1",
+    "name": "气息二蛊蛊方",
+    "rank": "二转",
+    "path": "气道",
+    "target": "气息二蛊",
+    "targetGuId": "gu_qi_2_1",
+    "price": 24,
+    "guIds": [],
+    "materialIds": [
+      "mat_qi_2_1",
+      "mat_qi_2_2",
+      "mat_qi_1_3"
+    ],
+    "materials": "赤气草×4、赤气石×4、初气晶×4",
+    "note": "炼制气息二蛊的标准蛊方，主材偏向气道，适合二转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_qi_2_2",
+    "name": "气步二蛊蛊方",
+    "rank": "二转",
+    "path": "气道",
+    "target": "气步二蛊",
+    "targetGuId": "gu_qi_2_2",
+    "price": 18,
+    "guIds": [],
+    "materialIds": [
+      "mat_qi_2_1",
+      "mat_qi_2_2",
+      "mat_qi_1_3"
+    ],
+    "materials": "赤气草×4、赤气石×4、初气晶×4",
+    "note": "炼制气步二蛊的标准蛊方，主材偏向气道，适合二转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_qi_3_1",
+    "name": "气念三蛊蛊方",
+    "rank": "三转",
+    "path": "气道",
+    "target": "气念三蛊",
+    "targetGuId": "gu_qi_3_1",
+    "price": 96,
+    "guIds": [],
+    "materialIds": [
+      "mat_qi_3_1",
+      "mat_qi_3_2",
+      "mat_qi_2_3"
+    ],
+    "materials": "玄气草×5、玄气石×5、赤气晶×5",
+    "note": "炼制气念三蛊的标准蛊方，主材偏向气道，适合三转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_qi_3_2",
+    "name": "气刺三蛊蛊方",
+    "rank": "三转",
+    "path": "气道",
+    "target": "气刺三蛊",
+    "targetGuId": "gu_qi_3_2",
+    "price": 72,
+    "guIds": [],
+    "materialIds": [
+      "mat_qi_3_1",
+      "mat_qi_3_2",
+      "mat_qi_2_3"
+    ],
+    "materials": "玄气草×5、玄气石×5、赤气晶×5",
+    "note": "炼制气刺三蛊的标准蛊方，主材偏向气道，适合三转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_qi_4_1",
+    "name": "气盾四蛊蛊方",
+    "rank": "四转",
+    "path": "气道",
+    "target": "气盾四蛊",
+    "targetGuId": "gu_qi_4_1",
+    "price": 420,
+    "guIds": [],
+    "materialIds": [
+      "mat_qi_4_1",
+      "mat_qi_4_2",
+      "mat_qi_3_3"
+    ],
+    "materials": "灵气草×6、灵气石×6、玄气晶×6",
+    "note": "炼制气盾四蛊的标准蛊方，主材偏向气道，适合四转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_qi_4_2",
+    "name": "气魄四蛊蛊方",
+    "rank": "四转",
+    "path": "气道",
+    "target": "气魄四蛊",
+    "targetGuId": "gu_qi_4_2",
+    "price": 315,
+    "guIds": [],
+    "materialIds": [
+      "mat_qi_4_1",
+      "mat_qi_4_2",
+      "mat_qi_3_3"
+    ],
+    "materials": "灵气草×6、灵气石×6、玄气晶×6",
+    "note": "炼制气魄四蛊的标准蛊方，主材偏向气道，适合四转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_qi_5_1",
+    "name": "气影五蛊蛊方",
+    "rank": "五转",
+    "path": "气道",
+    "target": "气影五蛊",
+    "targetGuId": "gu_qi_5_1",
+    "price": 1440,
+    "guIds": [],
+    "materialIds": [
+      "mat_qi_5_1",
+      "mat_qi_5_2",
+      "mat_qi_4_3"
+    ],
+    "materials": "王气草×7、王气石×7、灵气晶×7",
+    "note": "炼制气影五蛊的标准蛊方，主材偏向气道，适合五转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_qi_5_2",
+    "name": "气心五蛊蛊方",
+    "rank": "五转",
+    "path": "气道",
+    "target": "气心五蛊",
+    "targetGuId": "gu_qi_5_2",
+    "price": 1080,
+    "guIds": [],
+    "materialIds": [
+      "mat_qi_5_1",
+      "mat_qi_5_2",
+      "mat_qi_4_3"
+    ],
+    "materials": "王气草×7、王气石×7、灵气晶×7",
+    "note": "炼制气心五蛊的标准蛊方，主材偏向气道，适合五转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_li_1_1",
+    "name": "力刃蛊蛊方",
+    "rank": "一转",
+    "path": "力道",
+    "target": "力刃蛊",
+    "targetGuId": "gu_li_1_1",
+    "price": 10,
+    "guIds": [],
+    "materialIds": [
+      "mat_li_1_1",
+      "mat_li_1_2"
+    ],
+    "materials": "初力草×3、初力石×3",
+    "note": "炼制力刃蛊的标准蛊方，主材偏向力道，适合一转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_li_1_2",
+    "name": "力甲蛊蛊方",
+    "rank": "一转",
+    "path": "力道",
+    "target": "力甲蛊",
+    "targetGuId": "gu_li_1_2",
+    "price": 10,
+    "guIds": [],
+    "materialIds": [
+      "mat_li_1_1",
+      "mat_li_1_2"
+    ],
+    "materials": "初力草×3、初力石×3",
+    "note": "炼制力甲蛊的标准蛊方，主材偏向力道，适合一转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_li_2_1",
+    "name": "力息二蛊蛊方",
+    "rank": "二转",
+    "path": "力道",
+    "target": "力息二蛊",
+    "targetGuId": "gu_li_2_1",
+    "price": 24,
+    "guIds": [],
+    "materialIds": [
+      "mat_li_2_1",
+      "mat_li_2_2",
+      "mat_li_1_3"
+    ],
+    "materials": "赤力草×4、赤力石×4、初力晶×4",
+    "note": "炼制力息二蛊的标准蛊方，主材偏向力道，适合二转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_li_2_2",
+    "name": "力步二蛊蛊方",
+    "rank": "二转",
+    "path": "力道",
+    "target": "力步二蛊",
+    "targetGuId": "gu_li_2_2",
+    "price": 18,
+    "guIds": [],
+    "materialIds": [
+      "mat_li_2_1",
+      "mat_li_2_2",
+      "mat_li_1_3"
+    ],
+    "materials": "赤力草×4、赤力石×4、初力晶×4",
+    "note": "炼制力步二蛊的标准蛊方，主材偏向力道，适合二转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_li_3_1",
+    "name": "力念三蛊蛊方",
+    "rank": "三转",
+    "path": "力道",
+    "target": "力念三蛊",
+    "targetGuId": "gu_li_3_1",
+    "price": 96,
+    "guIds": [],
+    "materialIds": [
+      "mat_li_3_1",
+      "mat_li_3_2",
+      "mat_li_2_3"
+    ],
+    "materials": "玄力草×5、玄力石×5、赤力晶×5",
+    "note": "炼制力念三蛊的标准蛊方，主材偏向力道，适合三转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_li_3_2",
+    "name": "力刺三蛊蛊方",
+    "rank": "三转",
+    "path": "力道",
+    "target": "力刺三蛊",
+    "targetGuId": "gu_li_3_2",
+    "price": 72,
+    "guIds": [],
+    "materialIds": [
+      "mat_li_3_1",
+      "mat_li_3_2",
+      "mat_li_2_3"
+    ],
+    "materials": "玄力草×5、玄力石×5、赤力晶×5",
+    "note": "炼制力刺三蛊的标准蛊方，主材偏向力道，适合三转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_li_4_1",
+    "name": "力盾四蛊蛊方",
+    "rank": "四转",
+    "path": "力道",
+    "target": "力盾四蛊",
+    "targetGuId": "gu_li_4_1",
+    "price": 420,
+    "guIds": [],
+    "materialIds": [
+      "mat_li_4_1",
+      "mat_li_4_2",
+      "mat_li_3_3"
+    ],
+    "materials": "灵力草×6、灵力石×6、玄力晶×6",
+    "note": "炼制力盾四蛊的标准蛊方，主材偏向力道，适合四转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_li_4_2",
+    "name": "力魄四蛊蛊方",
+    "rank": "四转",
+    "path": "力道",
+    "target": "力魄四蛊",
+    "targetGuId": "gu_li_4_2",
+    "price": 315,
+    "guIds": [],
+    "materialIds": [
+      "mat_li_4_1",
+      "mat_li_4_2",
+      "mat_li_3_3"
+    ],
+    "materials": "灵力草×6、灵力石×6、玄力晶×6",
+    "note": "炼制力魄四蛊的标准蛊方，主材偏向力道，适合四转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_li_5_1",
+    "name": "力影五蛊蛊方",
+    "rank": "五转",
+    "path": "力道",
+    "target": "力影五蛊",
+    "targetGuId": "gu_li_5_1",
+    "price": 1440,
+    "guIds": [],
+    "materialIds": [
+      "mat_li_5_1",
+      "mat_li_5_2",
+      "mat_li_4_3"
+    ],
+    "materials": "王力草×7、王力石×7、灵力晶×7",
+    "note": "炼制力影五蛊的标准蛊方，主材偏向力道，适合五转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  },
+  {
+    "id": "recipe_gu_li_5_2",
+    "name": "力心五蛊蛊方",
+    "rank": "五转",
+    "path": "力道",
+    "target": "力心五蛊",
+    "targetGuId": "gu_li_5_2",
+    "price": 1080,
+    "guIds": [],
+    "materialIds": [
+      "mat_li_5_1",
+      "mat_li_5_2",
+      "mat_li_4_3"
+    ],
+    "materials": "王力草×7、王力石×7、灵力晶×7",
+    "note": "炼制力心五蛊的标准蛊方，主材偏向力道，适合五转炼蛊师使用。",
+    "status": "approved",
+    "creator": "资源包V8.1"
+  }
+]

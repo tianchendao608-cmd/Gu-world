@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>五域两天资源导入器 V8.1</title>
+<style>
+body{font-family:"Songti SC","Noto Serif SC",serif;background:#1b120c;color:#f8e8c8;margin:0;padding:24px}.box{max-width:900px;margin:auto;background:#fff8df;color:#24170d;border:2px solid #c6973a;border-radius:22px;padding:24px;box-shadow:0 20px 80px rgba(0,0,0,.35)}button{border:1px solid #b98a2d;background:linear-gradient(#fff6d9,#e7c983);padding:12px 18px;border-radius:12px;font-weight:800;margin:6px;cursor:pointer}pre{background:#150f0a;color:#f8e8c8;border-radius:14px;padding:16px;min-height:220px;white-space:pre-wrap}.danger{background:#8f1d1d;color:white}h1{margin-top:0}.pill{display:inline-block;background:#ead8ad;border-radius:999px;padding:5px 10px;margin:3px}</style></head>
+<body><div class="box"><h1>五域两天 · 资源导入器 V8.1</h1>
+<p>本页会把资源包写入你的 Firebase Firestore。重复导入会覆盖同 ID 数据，不会重复生成一堆同名资料。</p>
+<p><span class="pill">蛊虫：130</span><span class="pill">蛊材：195</span><span class="pill">蛊方：130</span></p>
+<button id="importAll">一键导入全部</button><button id="importGu">只导入蛊虫</button><button id="importMat">只导入蛊材</button><button id="importRecipe">只导入蛊方</button><button class="danger" id="clearLog">清空日志</button>
+<pre id="log">等待导入……</pre>
+</div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+const firebaseConfig = {
+  apiKey: "AIzaSyBn_b3C0EEt5ETRMQXVCjaxFf9SRgOiBKg",
+  authDomain: "gu-world.firebaseapp.com",
+  projectId: "gu-world",
+  storageBucket: "gu-world.firebasestorage.app",
+  messagingSenderId: "520066392434",
+  appId: "1:520066392434:web:8b6203c35f57dd143bfdeb",
+  measurementId: "G-RG829DQ72Z"
+};
+const app = initializeApp(firebaseConfig); const db = getFirestore(app);
+const logEl=document.getElementById('log');
+function log(t){logEl.textContent += '
+'+t; logEl.scrollTop=logEl.scrollHeight;}
+async function loadJson(name){const r=await fetch(name+'?v='+Date.now()); if(!r.ok) throw new Error('读取失败：'+name); return await r.json();}
+async function importCollection(colName,fileName){
+  const arr=await loadJson(fileName); log('开始导入 '+colName+'：'+arr.length+' 条');
+  let i=0;
+  for(const item of arr){
+    const id=item.id || (item.name+'_'+i);
+    await setDoc(doc(db,colName,id),{...item, id, importedAt:serverTimestamp()},{merge:true});
+    i++; if(i%20===0) log(colName+' 已导入 '+i+'/'+arr.length);
+  }
+  log('完成 '+colName+'：'+i+' 条');
+}
+document.getElementById('importGu').onclick=()=>importCollection('guworms','guworms.json').catch(e=>log('错误：'+e.message));
+document.getElementById('importMat').onclick=()=>importCollection('materials','materials.json').catch(e=>log('错误：'+e.message));
+document.getElementById('importRecipe').onclick=()=>importCollection('recipes','recipes.json').catch(e=>log('错误：'+e.message));
+document.getElementById('importAll').onclick=async()=>{try{await importCollection('materials','materials.json'); await importCollection('guworms','guworms.json'); await importCollection('recipes','recipes.json'); log('全部导入完成，回主站刷新即可。');}catch(e){log('错误：'+e.message)}};
+document.getElementById('clearLog').onclick=()=>logEl.textContent='';
+</script></body></html>
