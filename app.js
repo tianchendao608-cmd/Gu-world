@@ -630,3 +630,141 @@ setInterval(runtimeTick,1000);
 renderRules=function(){ $('content').innerHTML=`<div class="scroll-panel"><h2>V8.2 历练/闭关修复版</h2><p>历练谷：每5分钟一次；高转刷低转收益25%；低转强刷高转只扣血无收益。</p><p>历练扣血：一转3，二转8，三转15，四转20，五转30。死亡后红字30秒，重生扣100元石。</p><p>闭关洞：小闭关1分钟，大闭关5分钟；突破耗时20秒，需150%基础真元，并存在失败概率。</p><p>恢复：一转每秒回1真元，二转2，三转4，四转8，五转16；生命每10秒按同倍率恢复。</p></div>`; };
 
 boot();
+
+/* ===================== V8.3 历练冷却细化 / 丹田突破动画 / 实时扣真元 ===================== */
+const V83 = { areaCooldown: 60*1000, breakthroughMs: 20*1000 };
+
+// 增加一转、二转历练地，避免低阶玩家无事可刷
+try{
+  const moreAreas = [
+    {id:'grass_slope',name:'青芒草坡',rank:'一转',cost:3,time:10,stones:[8,24],materials:['青芒草','露珠叶','草木灰'],guChance:14,desc:'最安全的一转历练地，适合新入世蛊师熟悉战斗。'},
+    {id:'small_wind_valley',name:'小风谷',rank:'一转',cost:4,time:10,stones:[10,28],materials:['风砂','轻羽草','谷风石'],guChance:16,desc:'风声不绝，常产风道基础蛊材。'},
+    {id:'blood_mosquito_wood',name:'血蚊林',rank:'一转',cost:5,time:10,stones:[12,32],materials:['血蚊翅','赤纹叶','血滴草'],guChance:18,desc:'血蚊成群，收益略高，但会损耗气血。'},
+    {id:'stone_tooth_shore',name:'石牙滩',rank:'一转',cost:4,time:10,stones:[9,26],materials:['石牙','细砂晶','碎岩粉'],guChance:13,desc:'浅滩遍布石牙，适合力道、石道基础采集。'},
+    {id:'red_fox_hill',name:'赤狐丘',rank:'二转',cost:14,time:20,stones:[28,76],materials:['赤狐尾','狐火毛','兽血珠'],guChance:14,desc:'赤狐出没，火道与变化道蛊材较多。'},
+    {id:'thunder_cliff',name:'雷雨崖',rank:'二转',cost:16,time:20,stones:[32,84],materials:['雷击木','电纹石','雷雨露'],guChance:15,desc:'雷雨常年不散，适合雷道蛊师冒险。'},
+    {id:'mist_creek',name:'云雾涧',rank:'二转',cost:13,time:20,stones:[26,72],materials:['云雾晶','白云石','浮云叶'],guChance:15,desc:'云雾深藏，云道、气道资源丰富。'},
+    {id:'sand_scorpion_dune',name:'沙蝎丘',rank:'二转',cost:15,time:20,stones:[30,80],materials:['沙蝎壳','黄沙晶','毒尾针'],guChance:14,desc:'沙蝎盘踞，适合沙道与毒性蛊材收集。'}
+  ];
+  moreAreas.forEach(a=>{ if(!adventureAreas.some(x=>x.id===a.id)) adventureAreas.splice(Math.max(1, adventureAreas.length-3),0,a); });
+}catch(e){ console.warn('V8.3 添加历练地失败', e); }
+
+function areaCooldownLeft(area){
+  const map = me?.lastAdventureByArea || {};
+  return Math.max(0, Math.ceil((n(map[area.id]) + V83.areaCooldown - Date.now())/1000));
+}
+function essenceColorClassByRank(rank){ return essenceClass[rank] || 'essence-green'; }
+function essenceColorHexByRank(rank){
+  return {"一转":"#47d88a","二转":"#d63b3b","三转":"#dfe7f0","四转":"#f0c847","五转":"#a56cff","六转":"#47d88a","七转":"#d63b3b","八转":"#dfe7f0","九转":"#f0c847"}[rank] || '#47d88a';
+}
+function breakthroughProgress(job){
+  if(!job) return 0;
+  const started = n(job.startedAt) || (n(job.until)-V83.breakthroughMs);
+  return Math.max(0, Math.min(1, (Date.now()-started)/V83.breakthroughMs));
+}
+function dantianHtml(job){
+  if(!job) return '';
+  const curRank = realmRank(me?.realm);
+  const nextRank = realmRank(job.next || me?.realm);
+  const p = breakthroughProgress(job);
+  const from = essenceColorHexByRank(curRank), to = essenceColorHexByRank(nextRank);
+  const burnNeed = n(job.costEssence), burned = n(job.consumedEssence);
+  const left = Math.max(0, Math.ceil((n(job.until)-Date.now())/1000));
+  return `<div class="breakthrough-stage">
+    <h3>真元冲关</h3>
+    <div class="dantian" style="--from:${from};--to:${to};--p:${Math.round(p*100)}%">
+      <div class="dantian-fill"></div>
+      <div class="dantian-core">${Math.round(p*100)}%</div>
+    </div>
+    <p><b>${safe(curRank)}</b> 元池正在冲击 <b>${safe(nextRank)}</b> 元池</p>
+    <p class="countdown danger-text">剩余 ${left} 秒｜已燃烧真元 ${Math.floor(burned)}/${burnNeed}</p>
+    <p>当前真元：<b>${n(me.essence)}</b> / ${Math.max(maxEssence(me), burnNeed)}</p>
+    <div class="toolbar"><button onclick="window.restoreEssence()">立刻用元石恢复真元</button></div>
+  </div>`;
+}
+
+// 每个历练地单独1分钟冷却，低阶可强刷高阶但只扣血无收益，高阶刷低阶25%收益
+renderAdventure=function(){
+  if(!requireLogin())return; renderDeathScreen();
+  $('content').innerHTML=`<div class="scroll-panel"><h2>历练谷</h2><p>每个试炼地独立冷却1分钟。一转也可强闯高阶试炼地，但只会扣血，无收益；高转刷低转收益25%。</p><p class="muted">死亡后红屏30秒，重生扣100元石；元石不足需管理员处理。</p></div><div class="grid adventure-grid">${adventureAreas.map((a,i)=>{const dmg=areaDamage(a), rate=adventureRewardRate(a), cd=areaCooldownLeft(a); return `<div class="card adventure-card"><h3>${safe(a.name)}</h3><span class="pill">推荐 ${safe(a.rank)}</span><span class="pill">扣血 ${dmg}</span><span class="pill">收益 ${Math.round(rate*100)}%</span><span class="pill">${cd>0?'冷却 '+cd+'秒':'可历练'}</span><p>${safe(a.desc)}</p><p class="muted">奖励：元石 ${a.stones[0]}~${a.stones[1]}｜蛊材×1~3｜蛊虫概率 ${a.guChance}%</p><button ${cd>0||isDead(me)?'disabled':''} onclick="window.startAdventure(${i})">开始历练</button></div>`}).join('')}</div>`;
+};
+window.startAdventure=async function(i){
+  if(actionLocked())return; const a=adventureAreas[i]; if(!a)return;
+  const cd=areaCooldownLeft(a); if(cd>0)return toast(`${a.name} 冷却中：${cd}秒`);
+  const dmg=areaDamage(a); const hpAfter=n(me.hp || computedAttrs(me).life)-dmg;
+  const byArea={...(me.lastAdventureByArea||{})}; byArea[a.id]=Date.now();
+  const patch={hp:hpAfter,lastAdventureByArea:byArea,updatedAt:serverTimestamp()};
+  if(hpAfter<=0){ patch.deadUntil=Date.now()+V82.deathMs; await saveMe(patch); fx('历练失败：身死道消'); renderDeathScreen(); return; }
+  const rate=adventureRewardRate(a);
+  if(rate<=0){ await saveMe(patch); fx(`强闯${a.name}受创：生命-${dmg}，无收益`); return; }
+  const inv=myInv(); const stones=Math.floor(randInt(a.stones[0],a.stones[1])*rate); const mat=a.materials[randInt(0,a.materials.length-1)]; const matCount=Math.max(1,Math.floor(randInt(1,3)*rate)); addInv(inv,'materials',mat,matCount);
+  let guText=''; const pool=approved(state.guworms).filter(g=>itemRank(g)===a.rank);
+  if(pool.length && randInt(1,100)<=Math.max(1,Math.floor(a.guChance*rate))){const g=pool[randInt(0,pool.length-1)]; addInv(inv,'guworms',g.id,1); guText=`，获得蛊虫：${g.name||g.id}×1`;}
+  await saveMe({...patch,stones:n(me.stones)+stones,inventory:inv,adventureCount:n(me.adventureCount)+1,cultivation:n(me.cultivation)+Math.ceil(stones/3)});
+  fx(`历练完成：生命-${dmg}，元石+${stones}，${mat}×${matCount}${guText}`);
+};
+
+// 闭关洞显示丹田突破动画；突破期间每秒刷新真元/血量，可用元石补真元
+renderCultivate=function(){
+  if(!requireLogin())return; renderDeathScreen(); const cur=n(me.cultivation), need=cultivationNeed(me), cost=breakthroughCost(me), next=nextRealmName(me.realm);
+  let jobHtml='';
+  if(me.cultivateJob){ const left=Math.max(0,Math.ceil((n(me.cultivateJob.until)-Date.now())/1000)); jobHtml = left>0 ? `<p class="countdown">闭关中：${left}秒</p>` : `<button onclick="window.claimCultivation()">领取闭关成果 +${n(me.cultivateJob.gain)}修为</button>`; }
+  if(me.breakthroughJob){ jobHtml += dantianHtml(me.breakthroughJob); }
+  $('content').innerHTML=`<div class="scroll-panel"><h2>闭关洞</h2><p>当前境界：<b>${safe(me.realm)}</b> → 下一境界：<b>${safe(next)}</b></p><p>修为：${cur}/${need}</p><div class="progress"><i style="width:${Math.min(100,cur/need*100)}%"></i></div><p>当前真元：<b>${n(me.essence)}</b>/${Math.max(maxEssence(me),cost.essence)}（突破总需 ${cost.essence} 真元，20秒内持续扣除）</p>${jobHtml}<div class="toolbar"><button ${me.cultivateJob||me.breakthroughJob||isDead(me)?'disabled':''} onclick="window.startCultivation('small')">闭关一次：1分钟，50元石 → 修为+80</button><button ${me.cultivateJob||me.breakthroughJob||isDead(me)?'disabled':''} onclick="window.startCultivation('big')">大闭关：5分钟，200元石 → 修为+360</button><button ${me.cultivateJob||me.breakthroughJob||isDead(me)?'disabled':''} onclick="window.breakthrough()">尝试突破</button></div><p class="muted">突破耗时20秒，真元会逐秒燃烧；不足则元池停止变色并突破失败。突破过程中仍可点击右下角或本页按钮用元石恢复。</p><p>突破消耗：元石 ${cost.stones}，真元 ${cost.essence}｜成功率约 ${breakthroughChance(me)}%</p></div>`;
+};
+window.breakthrough=async function(){
+  if(actionLocked())return; if(me.cultivateJob||me.breakthroughJob)return toast('已有闭关/突破进行中');
+  const need=cultivationNeed(me), cost=breakthroughCost(me), next=nextRealmName(me.realm);
+  if(next===me.realm)return toast('已至当前最高境界');
+  if(n(me.cultivation)<need)return toast('修为不足');
+  if(n(me.stones)<cost.stones)return toast('元石不足');
+  if(n(me.essence)<=0)return toast('真元枯竭，无法开始冲关');
+  const startedAt=Date.now();
+  await saveMe({stones:n(me.stones)-cost.stones,breakthroughJob:{startedAt,until:startedAt+V83.breakthroughMs,next,costEssence:cost.essence,need,chance:breakthroughChance(me),consumedEssence:0,lastBurnAt:startedAt,failed:false}});
+  toast('真元冲关开始，20秒内保持真元不断'); render();
+};
+window.finishBreakthrough=async function(){
+  if(!requireLogin())return; const j=me.breakthroughJob; if(!j)return;
+  if(n(j.until)>Date.now())return toast('突破尚未完成');
+  if(j.failed){ await saveMe({breakthroughJob:null}); fx('突破失败：真元中断'); return; }
+  const ok=randInt(1,100)<=n(j.chance||70); const next=j.next, need=n(j.need);
+  if(!ok){ await saveMe({breakthroughJob:null}); fx('突破失败：道基震荡'); return; }
+  const newMax=Math.floor((baseEssence[realmRank(next)]||60)*(aptPct[me.aptitude]||0.45));
+  await saveMe({realm:next,cultivation:Math.max(0,n(me.cultivation)-need),essence:Math.min(newMax,n(me.essence)+Math.ceil(newMax*0.4)),breakthroughJob:null});
+  fx(`突破成功：${next}`); render();
+};
+
+// 覆盖恢复：突破时允许恢复到突破总需真元上限；普通时恢复到当前真元池上限
+window.restoreEssence=async function(){
+  if(!requireLogin())return; if(isDead(me))return renderDeathScreen();
+  const use=restoreAmount ? restoreAmount() : 1;
+  if(n(me.stones)<use)return toast('元石不足');
+  const cap=me.breakthroughJob?Math.max(maxEssence(me), n(me.breakthroughJob.costEssence)):maxEssence(me);
+  const before=n(me.essence); const add=Math.min(use*10, Math.max(0,cap-before));
+  if(add<=0)return toast('真元已达当前可储备上限');
+  await saveMe({stones:n(me.stones)-use, essence:before+add});
+  toast(`使用${use}元石，恢复${add}真元`);
+};
+
+// 突破燃烧：每秒扣除总需求/20，真元不够立即失败；每秒写入，保证玩家看到实时数值。
+let v83Burning=false;
+async function v83BreakthroughTick(){
+  if(v83Burning || !me || !me.breakthroughJob) return;
+  const j=me.breakthroughJob; const now=Date.now();
+  if(j.failed) return;
+  if(now >= n(j.until)){ window.finishBreakthrough(); return; }
+  const last=n(j.lastBurnAt)||n(j.startedAt)||now; const elapsed=Math.floor((now-last)/1000);
+  if(elapsed<=0) return;
+  const perSec=n(j.costEssence)/20; const needBurn=Math.ceil(perSec*elapsed);
+  if(n(me.essence) < needBurn){
+    v83Burning=true;
+    await saveMe({breakthroughJob:{...j,failed:true,failReason:'真元不足',lastBurnAt:now}, essence:n(me.essence)}).catch(()=>{});
+    v83Burning=false; fx('突破失败：真元中断'); render(); return;
+  }
+  v83Burning=true;
+  await saveMe({essence:n(me.essence)-needBurn, breakthroughJob:{...j,lastBurnAt:now,consumedEssence:n(j.consumedEssence)+needBurn}}).catch(()=>{});
+  v83Burning=false;
+}
+setInterval(v83BreakthroughTick,1000);
+
+renderRules=function(){ $('content').innerHTML=`<div class="scroll-panel"><h2>V8.3 历练与突破强化版</h2><p>历练谷：每个试炼地独立1分钟冷却；高转刷低转收益25%；低转强刷高转只扣血无收益。</p><p>历练扣血：一转3，二转8，三转15，四转20，五转30。死亡后红字30秒，重生扣100元石。</p><p>闭关洞：小闭关1分钟，大闭关5分钟；突破显示元池丹田动画，20秒内逐秒燃烧真元。</p><p>突破过程中玩家仍可用元石恢复真元；真元不足会停止变色并失败。</p><p>恢复：一转每秒回1真元，二转2，三转4，四转8，五转16；生命每10秒按同倍率恢复。</p></div>`; };
