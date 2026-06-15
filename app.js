@@ -1829,3 +1829,115 @@ window.adventureUse=async function(type,id,slot){
 
 // 刷新渲染
 try{ if(current==='arena'||current==='adventure')render(); renderVitals(); }catch(e){console.warn('V9.3刷新失败',e);}
+
+
+/* ===================== V10 小队历练与50米战场重制 ===================== */
+(function(){
+  const V10 = { zoom: 1, selectedNpc: null, battleTimer: null, fieldSize: 50 };
+  state.parties = state.parties || [];
+  state.adventureInstances = state.adventureInstances || [];
+  try{ onSnapshot(query(col('parties'),orderBy('createdAt','desc')),snap=>{state.parties=snap.docs.map(d=>({id:d.id,...d.data()})); if(current==='adventure')render();}); }catch(e){console.warn('parties listen failed',e)}
+  try{ onSnapshot(query(col('adventureInstances'),orderBy('createdAt','desc')),snap=>{state.adventureInstances=snap.docs.map(d=>({id:d.id,...d.data()})); if(current==='adventure')render();}); }catch(e){console.warn('adventureInstances listen failed',e)}
+
+  function now(){return Date.now()}
+  function myParty(){return (state.parties||[]).find(p=>p.status!=='closed' && ((p.members||[]).includes(accountId) || p.leader===accountId));}
+  function canControlParty(p){return p && p.leader===accountId;}
+  function playerDisplay(id){const p=(state.users||[]).find(u=>u.id===id); return p?.name||id;}
+  function allAreas(){ try{return (typeof v86AllAreas==='function')?v86AllAreas():adventureAreas;}catch(e){return adventureAreas||[];} }
+  function rankOfArea(a){return rankNum(a?.rank||'一转')}
+  function tokenPos(seed){ const x=(seed*17%42)+4; const y=(seed*31%42)+4; return {x,y}; }
+  function moveToward(o,tx,ty,spd){ const dx=tx-o.x, dy=ty-o.y; const d=Math.max(0.001,Math.hypot(dx,dy)); const step=Math.min(d, Math.max(0.15,spd*0.18)); o.x=Number((o.x+dx/d*step).toFixed(2)); o.y=Number((o.y+dy/d*step).toFixed(2)); }
+  function dist(a,b){return Math.hypot((a.x||0)-(b.x||0),(a.y||0)-(b.y||0));}
+  function defaultNpcGu(a,i){
+    const rank=rankOfArea(a); const pool=approved(state.guworms).filter(g=>rankNum(g.rank)<=rank && rankNum(g.rank)>=Math.max(1,rank-1));
+    return pool[(i+rank)%Math.max(1,pool.length)] || null;
+  }
+  function makeNpcs(a){
+    const r=rankOfArea(a); const count=Math.min(7,Math.max(2,r+1));
+    return Array.from({length:count},(_,i)=>{const g=defaultNpcGu(a,i); const pos=tokenPos(i+1+r*5); return {id:'npc'+i,name:`${a.name}守卫${i+1}`,x:pos.x,y:pos.y,maxHp:Math.round(20+r*18+i*8),hp:Math.round(20+r*18+i*8),attack:5+r*3,defense:3+r*2,speed:3+r,gu:g?{type:'guworms',id:g.id,name:g.name,cooldown:0}:null,lastBasic:0,lastGu:0,dead:false};});
+  }
+  function battlePlayers(members){
+    return (members||[accountId]).map((id,i)=>{const pos={x:5+(i%3)*3,y:8+Math.floor(i/3)*4}; return {id,name:playerDisplay(id),x:pos.x,y:pos.y,hp:id===accountId?n(me?.hp||computedAttrs(me).life):computedAttrs((state.users||[]).find(u=>u.id===id)).life,maxHp:id===accountId?computedAttrs(me).life:computedAttrs((state.users||[]).find(u=>u.id===id)).life};});
+  }
+  function nearestAliveNpc(b){return (b.npcs||[]).find(n=>!n.dead&&n.hp>0)}
+  function activePlayerPos(b){return (b.players||[]).find(p=>p.id===accountId)||{x:5,y:8};}
+  function npcAiTick(){
+    const b=window.v10AdventureBattle; if(!b||b.done)return;
+    const p=activePlayerPos(b);
+    (b.npcs||[]).forEach(npc=>{
+      if(npc.dead||npc.hp<=0)return;
+      moveToward(npc,p.x,p.y,npc.speed||3);
+      const d=dist(npc,p);
+      if(d<2.2 && now()-n(npc.lastBasic)>1000){ npc.lastBasic=now(); const dmg=Math.max(1,Number((npc.attack*0.25).toFixed(2))); b.logs.unshift(`${npc.name} 普攻命中你，伤害 ${dmg}`); v10DamageMe(dmg); }
+      if(npc.gu && d<12 && now()-n(npc.lastGu)>4500){ npc.lastGu=now(); const item=getItem(npc.gu.type,npc.gu.id); const attrs=effectAttrs(npc.gu.type,item,{mainPath:item?.path,subPath:item?.path},true); const dmg=Math.max(1,n(attrs.attack)+n(attrs.spirit)*0.2+n(attrs.speed)*0.1); b.logs.unshift(`${npc.name} 使用【${npc.gu.name}】，造成 ${dmg.toFixed(1)} 伤害`); v10DamageMe(dmg); }
+    });
+  }
+  async function v10DamageMe(dmg){
+    if(!me)return; const hp=Math.max(0,Number((n(me.hp||computedAttrs(me).life)-dmg).toFixed(2))); await saveMe({hp}); if(hp<=0){ const b=window.v10AdventureBattle; if(b){b.done=true;b.failed=true;b.logs.unshift('失败！你已死亡。');} fx('失败'); }
+  }
+  function v10StartLoop(){ if(V10.battleTimer)clearInterval(V10.battleTimer); V10.battleTimer=setInterval(()=>{if(window.v10AdventureBattle&&!window.v10AdventureBattle.done){npcAiTick(); if(current==='adventure')renderV10Battle();}},1000);}
+  function skillRange(item){const m=String(item?.range||item?.distance||'50').match(/\d+/); return m?Number(m[0]):50;}
+  function selectedNpc(b){return (b.npcs||[]).find(n=>n.id===V10.selectedNpc&&!n.dead&&n.hp>0) || nearestAliveNpc(b);}
+  function calcSkillDamage(type,id,npc){
+    if(type==='fist'){ const f=(typeof v93Fist==='function')?v93Fist():{name:'基础拳法',damage:0.25,cooldown:1,essence:0}; return {name:f.name,dmg:n(f.damage)||0.25,cost:n(f.essence)||0,cd:n(f.cooldown)||1,range:2}; }
+    const item=getItem(type,id); if(!item)return null; const attrs=effectAttrs(type,item,me,true); const dmg=Math.max(0.25,Number((n(attrs.attack)+n(attrs.spirit)*0.2+n(attrs.speed)*0.1-n(npc?.defense)*0.2).toFixed(2))); return {name:item.name||id,dmg,cost:itemUseCost(type,item),cd:secondsFrom?secondsFrom(item.cooldown||item.cd||3):3,range:skillRange(item)};
+  }
+  window.v10SelectNpc=function(id){V10.selectedNpc=id; renderV10Battle();};
+  window.v10Zoom=function(v){V10.zoom=Number(v||1); renderV10Battle();};
+  window.v10Use=function(type,id,slot){
+    const b=window.v10AdventureBattle; if(!b||b.done)return; const npc=selectedNpc(b); if(!npc)return toast('没有目标');
+    const p=activePlayerPos(b); const data=calcSkillDamage(type,id,npc); if(!data)return;
+    if(dist(p,npc)>data.range)return toast(`距离过远，需要${data.range}米内`);
+    if(n(me.essence)<data.cost)return toast('真元不足');
+    if(type!=='fist' && !isAbsorbed(type,id,me))return toast('未吸收蛊物不能使用');
+    saveMe({essence:n(me.essence)-data.cost});
+    npc.hp=Math.max(0,Number((npc.hp-data.dmg).toFixed(2))); b.damageBy[accountId]=(b.damageBy[accountId]||0)+data.dmg; b.logs.unshift(`${playerDisplay(accountId)} 使用【${data.name}】命中 ${npc.name}，伤害 ${data.dmg}`); fx(`-${data.dmg}`);
+    if(npc.hp<=0){npc.dead=true; b.logs.unshift(`${npc.name} 被击杀`);} 
+    if(!nearestAliveNpc(b)){b.done=true; b.logs.unshift('胜利！全部敌人已击败。');}
+    renderV10Battle();
+  };
+  window.v10Settle=function(){
+    const b=window.v10AdventureBattle; if(!b||!b.done||b.failed)return;
+    const a=b.area; const rate=(typeof adventureRewardRate==='function')?adventureRewardRate(a):1; const members=b.members||[accountId]; const total=Object.values(b.damageBy||{}).reduce((x,y)=>x+n(y),0)||1;
+    const baseStones=Math.floor((randInt?randInt(a.stones?.[0]||10,a.stones?.[1]||30):20)*rate);
+    const share=Math.max(1,Math.floor(baseStones*(n(b.damageBy[accountId])/total || 1/members.length)));
+    const inv=myInv(); if(a.materials&&a.materials.length){ const mat=a.materials[Math.floor(Math.random()*a.materials.length)]; inv.materials||={}; inv.materials[mat]||={count:0}; inv.materials[mat].count+=1; }
+    saveMe({stones:n(me.stones)+share,inventory:inv,wins:n(me.wins)+1,kills:n(me.kills)+(b.npcs||[]).length,lastAdventureByArea:{...(me.lastAdventureByArea||{}),[a.id||a.name]:Date.now()}}); fx(`结算：元石+${share}`); window.v10AdventureBattle=null; renderAdventure();
+  };
+  window.v10LeaveBattle=function(){window.v10AdventureBattle=null;renderAdventure();};
+
+  const oldRenderAdventureV10 = typeof renderAdventure==='function'?renderAdventure:null;
+  renderAdventure=function(){
+    if(window.v10AdventureBattle){renderV10Battle();return;}
+    const p=myParty(); const areas=allAreas();
+    const partyHtml=`<div class="scroll-panel party-panel"><h2>小队</h2>${p?`<p>队长：${safe(playerDisplay(p.leader))}</p><p>成员：${(p.members||[]).map(x=>safe(playerDisplay(x))).join('、')}</p><div class="toolbar"><button onclick="window.v10InviteParty()">邀请成员</button>${canControlParty(p)?'<button onclick="window.v10CloseParty()">解散小队</button>':''}</div>`:`<p>尚未创建小队。</p><button onclick="window.v10CreateParty()">创建小队</button>`}</div>`;
+    $('content').innerHTML=`${partyHtml}<div class="scroll-panel"><h2>历练谷</h2><p>队长选择任意历练地后，整支小队进入副本。50米×50米战场，可缩放、可瞄准，NPC会移动并使用蛊虫。</p></div><div class="grid adventure-grid">${areas.map((a,i)=>{const cd=typeof areaCooldownLeft==='function'?areaCooldownLeft(a):0;return `<div class="card adventure-card"><h3>${safe(a.name)}</h3><span class="pill">推荐 ${safe(a.rank||'一转')}</span><span class="pill">${cd>0?'冷却 '+cd+'秒':'可进入'}</span><p>${safe(a.desc||'')}</p><p class="muted">队伍模式：按贡献结算奖励。</p><button ${cd>0?'disabled':''} onclick="window.startAdventure(${i})">${p?'小队进入':'单人进入'}</button></div>`}).join('')}</div>`;
+  };
+  window.v10CreateParty=async function(){ if(!requireLogin())return; await setDoc(ref('parties',accountId),{leader:accountId,members:[accountId],status:'open',createdAt:serverTimestamp(),updatedAt:serverTimestamp()},{merge:true}); toast('小队已创建'); };
+  window.v10InviteParty=async function(){ const p=myParty(); if(!p)return toast('先创建小队'); const to=prompt('输入玩家ID'); if(!to)return; const members=[...(p.members||[])]; if(!members.includes(to))members.push(to); await setDoc(ref('parties',p.id||p.leader),{...p,members,updatedAt:serverTimestamp()},{merge:true}); toast('已邀请/加入：'+to); };
+  window.v10CloseParty=async function(){ const p=myParty(); if(!p)return; await setDoc(ref('parties',p.id||p.leader),{...p,status:'closed',updatedAt:serverTimestamp()},{merge:true}); toast('小队已解散'); renderAdventure(); };
+  window.startAdventure=function(i){
+    if(actionLocked&&actionLocked())return; const areas=allAreas(); const a=areas[i]; if(!a)return;
+    const p=myParty(); const members=p?.members||[accountId]; if(p && !canControlParty(p))return toast('只有队长可以开启历练');
+    const hpAfter=n(me.hp||computedAttrs(me).life)-(typeof areaDamage==='function'?areaDamage(a):3); if(hpAfter<=0){saveMe({hp:0,deadUntil:Date.now()+30000});fx('未入场便重伤身死');return;}
+    saveMe({hp:hpAfter});
+    window.v10AdventureBattle={area:a,members,players:battlePlayers(members),npcs:makeNpcs(a),damageBy:{},logs:[`进入 ${a.name}，战场50×50米。`],done:false,failed:false,createdAt:Date.now()};
+    V10.selectedNpc=null; v10StartLoop(); renderV10Battle();
+  };
+  function renderV10Battle(){
+    const b=window.v10AdventureBattle; if(!b){renderAdventure();return;} const p=activePlayerPos(b); const npc=selectedNpc(b); const eq=(typeof v91EquipList==='function')?v91EquipList():equipArray();
+    const fieldPlayers=(b.players||[]).map(pl=>`<div class="battle-token player-token" style="left:${pl.x*V10.zoom*10}px;top:${pl.y*V10.zoom*10}px"><span>${safe(pl.name)}</span></div>`).join('');
+    const fieldNpcs=(b.npcs||[]).map(npc=>`<button class="battle-token npc-token ${npc.id===V10.selectedNpc?'targeted':''} ${npc.dead?'dead':''}" style="left:${npc.x*V10.zoom*10}px;top:${npc.y*V10.zoom*10}px" onclick="window.v10SelectNpc('${npc.id}')"><span>${safe(npc.name)}</span><i>${Math.max(0,npc.hp)}/${npc.maxHp}</i></button>`).join('');
+    const skills=eq.map((e,i)=>{ if(!e)return `<div class="duel-skill empty"><b>${i}</b><span>空</span></div>`; const item=getItem(e.type,e.id); return `<div class="duel-skill"><b>${i}</b>${img(item?.image)}<span>${safe(itemName(e.type,e.id)).slice(0,5)}</span><button onclick="window.v10Use('${e.type}','${e.id}',${i})">释放</button></div>`; }).join('');
+    $('content').innerHTML=`<div class="battle-layout"><div class="duel-top"><button onclick="window.v10LeaveBattle()">退出</button><span class="pill">${safe(b.area.name)}</span><span class="pill">目标：${safe(npc?.name||'无')}</span><label>缩放 <input type="range" min="0.7" max="2.2" step="0.1" value="${V10.zoom}" oninput="window.v10Zoom(this.value)"></label></div><div class="battlefield-wrap"><div class="battlefield" style="width:${500*V10.zoom}px;height:${500*V10.zoom}px">${fieldPlayers}${fieldNpcs}</div></div>${b.done?`<div class="victory-banner">${b.failed?'失败':'胜利'}</div>${!b.failed?'<button onclick="window.v10Settle()">开始结算奖励</button>':''}`:''}<div class="toolbar"><button class="basic-hit-btn" onclick="window.v10Use('fist','fist',-1)">普攻</button><button onclick="window.openFistLibrary&&window.openFistLibrary()">切换拳法</button></div><div class="duel-skills">${skills}</div><div class="battle-log duel-log">${(b.logs||[]).map(x=>`<p>${safe(x)}</p>`).join('')}</div></div>`;
+  }
+
+  // 斗蛊台结束后必须点结束返回，并且一分钟后可重新创建房间。
+  window.finishDuelRoom=async function(id){ const r=(state.duelRooms||[]).find(x=>x.id===id); if(r?.pair && typeof v91SetCooldown==='function')await v91SetCooldown(r.pair); await setDoc(ref('duelRooms',id),{status:'closed',closedAt:Date.now(),updatedAt:serverTimestamp()},{merge:true}); window.v91CurrentRoom=''; renderArena(); };
+  const oldRenderDuelRoomV10 = typeof renderDuelRoom==='function'?renderDuelRoom:null;
+  if(oldRenderDuelRoomV10){ renderDuelRoom=function(r){ const html=oldRenderDuelRoomV10(r); if(r?.status==='finished'||r?.winner){return html.replace('</div></div>','<div class="toolbar"><button onclick="window.finishDuelRoom(\''+safe(r.id)+'\')">结束并返回斗蛊台</button></div></div></div>');} return html; }; }
+
+  const oldRenderRulesV10=renderRules;
+  renderRules=function(){ $('content').innerHTML=`<div class="scroll-panel"><h2>V10 战场重制</h2><p>历练谷支持创建小队、邀请成员，队长开启副本后全队进入。</p><p>战场为50米×50米，玩家与NPC均为小圆点，NPC会移动、普攻、使用蛊虫。</p><p>使用蛊物时需要先选择目标，目标出现红圈表示瞄准；范围不足则无法命中。</p><p>战斗五维中生命采用真实数值，其余属性进战场基础为5，蛊虫持续效果结束后自然消失。</p></div>`; };
+  try{ if(current==='adventure'||current==='arena')render(); renderVitals(); }catch(e){console.warn('V10刷新失败',e)}
+})();
