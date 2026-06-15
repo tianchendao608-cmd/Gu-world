@@ -1941,3 +1941,122 @@ try{ if(current==='arena'||current==='adventure')render(); renderVitals(); }catc
   renderRules=function(){ $('content').innerHTML=`<div class="scroll-panel"><h2>V10 战场重制</h2><p>历练谷支持创建小队、邀请成员，队长开启副本后全队进入。</p><p>战场为50米×50米，玩家与NPC均为小圆点，NPC会移动、普攻、使用蛊虫。</p><p>使用蛊物时需要先选择目标，目标出现红圈表示瞄准；范围不足则无法命中。</p><p>战斗五维中生命采用真实数值，其余属性进战场基础为5，蛊虫持续效果结束后自然消失。</p></div>`; };
   try{ if(current==='adventure'||current==='arena')render(); renderVitals(); }catch(e){console.warn('V10刷新失败',e)}
 })();
+
+/* ===================== V10.1 WASD战场移动修复：速度计算 / 手机方向键 / 美化 ===================== */
+(function(){
+  const MOVE = { keys:{}, timer:null, last:Date.now() };
+  function activeBattle(){ return window.v10AdventureBattle && !window.v10AdventureBattle.done ? window.v10AdventureBattle : null; }
+  function myToken(b){ return (b?.players||[]).find(p=>p.id===accountId); }
+  function clamp(v){ return Math.max(0, Math.min(50, Number(v||0))); }
+  function tempEffects(){ return window.v10TempEffects || {}; }
+  function activeSpeedBonus(){
+    const eff=tempEffects(); const now=Date.now(); let bonus=0;
+    Object.keys(eff).forEach(k=>{ const e=eff[k]; if(!e || n(e.until)<=now){ delete eff[k]; return; } bonus += n(e.speed); });
+    window.v10TempEffects=eff; return bonus;
+  }
+  function currentBattleSpeed(){ return 5 + activeSpeedBonus(); }
+  function metersPerSecond(){ return Math.max(0.35, currentBattleSpeed()/5); }
+  function redrawBattle(){ try{ if(current==='adventure' && typeof render==='function') render(); else if(typeof renderAdventure==='function') renderAdventure(); }catch(e){} }
+  function moveBy(dx,dy,scale=1){
+    const b=activeBattle(); if(!b)return; const p=myToken(b); if(!p)return;
+    const mag=Math.hypot(dx,dy)||1; const step=metersPerSecond()*scale;
+    p.x=Number(clamp(p.x + dx/mag*step).toFixed(2));
+    p.y=Number(clamp(p.y + dy/mag*step).toFixed(2));
+  }
+  function tickMove(){
+    const b=activeBattle(); if(!b)return;
+    const now=Date.now(); const dt=Math.min(0.2,(now-MOVE.last)/1000); MOVE.last=now;
+    let dx=0,dy=0;
+    if(MOVE.keys.w)dy-=1; if(MOVE.keys.s)dy+=1; if(MOVE.keys.a)dx-=1; if(MOVE.keys.d)dx+=1;
+    if(dx||dy){ moveBy(dx,dy,dt); redrawBattle(); }
+  }
+  document.addEventListener('keydown',e=>{
+    const k=(e.key||'').toLowerCase();
+    if(['w','a','s','d'].includes(k) && activeBattle()){
+      e.preventDefault(); MOVE.keys[k]=true;
+      if(!MOVE.timer){ MOVE.last=Date.now(); MOVE.timer=setInterval(tickMove,80); }
+    }
+  });
+  document.addEventListener('keyup',e=>{
+    const k=(e.key||'').toLowerCase(); if(['w','a','s','d'].includes(k)) MOVE.keys[k]=false;
+  });
+  window.v101MovePad=function(dx,dy){ moveBy(dx,dy,0.28); redrawBattle(); };
+
+  function v101SkillRange(item){ const m=String(item?.range||item?.distance||'50').match(/\d+(\.\d+)?/); return m?Number(m[0]):50; }
+  function v101Distance(a,b){ return Math.hypot((a?.x||0)-(b?.x||0),(a?.y||0)-(b?.y||0)); }
+  function v101SelectedNpc(b){
+    const id=window.v10SelectedNpc || window.V10SelectedNpc || null;
+    return (b?.npcs||[]).find(n=>n.id===id&&!n.dead&&n.hp>0) || (b?.npcs||[]).find(n=>!n.dead&&n.hp>0);
+  }
+  function v101EffectApply(type,item){
+    const attrs=effectAttrs(type,item,me,true); const durSec=Math.max(0, secondsFrom ? secondsFrom(item?.duration||item?.lasting||item?.hold||0) : n(item?.duration));
+    if(durSec>0 && n(attrs.speed)>0){
+      window.v10TempEffects ||= {};
+      window.v10TempEffects['speed_'+Date.now()]={speed:n(attrs.speed),until:Date.now()+durSec*1000};
+      fx(`速度+${n(attrs.speed)}，持续${durSec}秒`);
+    }
+    return attrs;
+  }
+  const oldSelect = window.v10SelectNpc;
+  window.v10SelectNpc=function(id){ window.v10SelectedNpc=id; window.V10SelectedNpc=id; if(oldSelect)oldSelect(id); else redrawBattle(); };
+
+  const oldUse = window.v10Use;
+  window.v10Use=function(type,id,slot){
+    const b=activeBattle();
+    if(!b){ if(oldUse)return oldUse(type,id,slot); return; }
+    const p=myToken(b); const npc=v101SelectedNpc(b); if(!npc)return toast('没有目标');
+    let item=null, name='基础拳法', cost=0, range=2, dmg=0.25;
+    if(type!=='fist'){
+      item=getItem(type,id); if(!item)return toast('蛊物不存在');
+      if(!isAbsorbed(type,id,me))return toast('未吸收蛊物不能使用');
+      cost=itemUseCost(type,item); if(n(me.essence)<cost)return toast('真元不足');
+      range=v101SkillRange(item); name=item.name||id;
+      const attrs=v101EffectApply(type,item); dmg=Math.max(0.25,Number((n(attrs.attack)+n(attrs.spirit)*0.2+n(attrs.speed)*0.1-n(npc.defense)*0.2).toFixed(2)));
+    }else{
+      const f=(typeof v93Fist==='function')?v93Fist():{name:'基础拳法',damage:0.25,cooldown:1,essence:0};
+      name=f.name||'基础拳法'; cost=n(f.essence); range=2; dmg=n(f.damage)||0.25;
+      const left=n(localStorage.getItem(`v101_fist_cd_${accountId}`))-Date.now(); if(left>0)return toast(`普攻冷却：${Math.ceil(left/1000)}秒`);
+      localStorage.setItem(`v101_fist_cd_${accountId}`,String(Date.now()+Math.max(1,n(f.cooldown)||1)*1000));
+    }
+    const dist=v101Distance(p,npc);
+    if(dist>range){ toast(`距离过远：${dist.toFixed(1)}米 / 需要${range}米内`); return; }
+    if(cost>0) saveMe({essence:n(me.essence)-cost});
+    npc.hp=Math.max(0,Number((n(npc.hp)-dmg).toFixed(2)));
+    b.damageBy ||= {}; b.damageBy[accountId]=(b.damageBy[accountId]||0)+dmg;
+    b.logs ||= []; b.logs.unshift(`${me?.name||accountId} 使用【${name}】命中 ${npc.name}，距离${dist.toFixed(1)}米，伤害 ${dmg}`);
+    if(npc.hp<=0){ npc.dead=true; b.logs.unshift(`${npc.name} 被击杀`); }
+    if(!(b.npcs||[]).find(x=>!x.dead&&x.hp>0)){ b.done=true; b.logs.unshift('胜利！全部敌人已击败。'); }
+    fx(`-${dmg}`); redrawBattle();
+  };
+
+  function decorateBattlefield(){
+    const b=activeBattle(); if(!b)return;
+    const p=myToken(b); const npc=v101SelectedNpc(b);
+    const wrap=document.querySelector('.battlefield-wrap'); const field=document.querySelector('.battlefield');
+    if(!wrap||!field)return;
+    if(!document.querySelector('.v101-help')){
+      const panel=document.createElement('div'); panel.className='v101-help';
+      panel.innerHTML=`<b>W A S D</b> 移动　速度：<span id="v101Speed">${currentBattleSpeed()}</span>　坐标：<span id="v101Pos">${p?`${p.x.toFixed(1)},${p.y.toFixed(1)}`:'-'}</span>`;
+      wrap.prepend(panel);
+    }else{
+      const s=document.getElementById('v101Speed'), pos=document.getElementById('v101Pos'); if(s)s.textContent=currentBattleSpeed(); if(pos&&p)pos.textContent=`${p.x.toFixed(1)},${p.y.toFixed(1)}`;
+    }
+    if(!document.querySelector('.v101-pad')){
+      const pad=document.createElement('div'); pad.className='v101-pad';
+      pad.innerHTML=`<button onclick="window.v101MovePad(0,-1)">↑</button><button onclick="window.v101MovePad(-1,0)">←</button><button onclick="window.v101MovePad(1,0)">→</button><button onclick="window.v101MovePad(0,1)">↓</button>`;
+      wrap.appendChild(pad);
+    }
+    if(p&&npc){
+      let line=document.querySelector('.target-line');
+      if(!line){ line=document.createElement('div'); line.className='target-line'; field.appendChild(line); }
+      const scale = field.offsetWidth/50;
+      const x1=p.x*scale+12, y1=p.y*scale+12, x2=npc.x*scale+12, y2=npc.y*scale+12;
+      const len=Math.hypot(x2-x1,y2-y1), ang=Math.atan2(y2-y1,x2-x1)*180/Math.PI;
+      line.style.width=len+'px'; line.style.left=x1+'px'; line.style.top=y1+'px'; line.style.transform=`rotate(${ang}deg)`;
+    }
+  }
+  const oldRender = render;
+  render=function(){ oldRender(); setTimeout(decorateBattlefield,0); };
+  setInterval(()=>{ if(activeBattle()) decorateBattlefield(); },500);
+  try{ render(); }catch(e){}
+})();
