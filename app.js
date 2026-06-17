@@ -2060,3 +2060,163 @@ try{ if(current==='arena'||current==='adventure')render(); renderVitals(); }catc
   setInterval(()=>{ if(activeBattle()) decorateBattlefield(); },500);
   try{ render(); }catch(e){}
 })();
+
+
+/* ===================== V10.2 审核阁与赏金堂：权限锁定 / 待审修改 / 通缉悬赏 ===================== */
+(function(){
+  state.bounties = state.bounties || [];
+  state.moderationLogs = state.moderationLogs || [];
+  try{
+    if(!navs.find(x=>x[0]==='bounties')){
+      const idx = navs.findIndex(x=>x[0]==='trades');
+      navs.splice(idx>=0?idx+1:navs.length,0,["bounties","赏金堂","天机阁通缉、悬赏追杀、罪犯强制挑战"]);
+      icons.bounties = "赏";
+    }
+  }catch(e){console.warn('V10.2 nav patch failed',e)}
+
+  try{ onSnapshot(query(col('bounties'),orderBy('createdAt','desc')),snap=>{state.bounties=snap.docs.map(d=>({id:d.id,...d.data()})); if(current==='bounties'||current==='review'||current==='players')render();}); }catch(e){console.warn('bounties listen failed',e)}
+  try{ onSnapshot(query(col('moderationLogs'),orderBy('createdAt','desc')),snap=>{state.moderationLogs=snap.docs.map(d=>({id:d.id,...d.data()}));}); }catch(e){}
+
+  // 待审核内容不再在主库对普通玩家生效；管理员仍可查看。
+  approved = function(arr){ return (arr||[]).filter(x=>x.status==='approved' || !x.status || isAdmin()); };
+
+  function cloneClean(obj){ const out={}; Object.keys(obj||{}).forEach(k=>{ if(!['id','createdAt','updatedAt'].includes(k)) out[k]=obj[k]; }); return out; }
+  function readonlyFinanceHint(){ return `<p class="muted">元石、胜场、击杀、生命、真元为系统字段，普通玩家绝对不可自行修改，只能通过历练、斗蛊、任务或管理员发放获得。</p>`; }
+  function rewardSummary(b){
+    const parts=[]; if(n(b.rewardStones)) parts.push(`元石×${n(b.rewardStones)}`);
+    if(b.rewardText) parts.push(b.rewardText); return parts.join('，') || '未填写';
+  }
+  function playerById(id){ return state.users.find(u=>u.id===id); }
+  function isCriminal(id){ return !!(state.bounties||[]).find(b=>b.status==='active' && b.target===id); }
+
+  const oldRender = render;
+  render = function(){
+    const q=($('globalSearch')?.value||'').trim();
+    if(current==='bounties') renderBounties(q); else oldRender();
+    renderVitals();
+  };
+
+  const oldRenderCatalog = renderCatalog;
+  renderCatalog = function(type,q){
+    const arr=filter(approved(state[type]),q);
+    $('content').innerHTML=`<div class="toolbar"><button onclick="window.editItem('${type}')">创作${typeCN[type]}</button></div>${readonlyFinanceHint()}<div class="grid">${arr.map(x=>card(type,x)).join('')||empty()}</div>`;
+    bindCards();
+  };
+
+  // 玩家创建或修改：一律提交审核；不会直接覆盖正式数据。管理员才可直接改正式数据。
+  const oldEditItem = editItem;
+  editItem = async function(type,id=null){
+    if(!requireLogin())return;
+    const item=id?getItem(type,id):{};
+    if(id && !isAdmin() && item.creator!==accountId) return toast('只能申请修改自己创作的内容');
+    // 使用原表单结构，但保存逻辑改写。
+    if(isAdmin()) return oldEditItem(type,id);
+
+    if((type==='killmoves'||type==='guhouses') && !id && !canCreateKillOrHouse(type)) return toast(type==='killmoves'?'创建杀招需任意流派大师成就':'创建凡蛊屋需任意流派宗师成就');
+    if(!id && (type==='guworms'||type==='recipes') && typeof canMakeWorldThing==='function' && !canMakeWorldThing(type)) return toast('三转以上才可创建蛊虫或蛊方');
+
+    let html=modalHead((id?'申请修改':'申请创作')+typeCN[type]); let inner='';
+    if(type==='guworms') inner=field('name','名称','text',item.name)+select('rank','等级',ranks,item.rank)+select('path','流派',paths,item.path)+field('image','图标路径','text',item.image)+field('price','价格','number',item.price)+field('absorbCost','吸收所需真元','number',item.absorbCost)+field('useCost','使用一次真元','number',item.useCost)+field('range','距离','text',item.range)+field('cooldown','冷却时间/秒','text',item.cooldown)+field('duration','持续/定身时间','text',item.duration)+field('attack','攻击','number',item.attack)+field('defense','防御','number',item.defense)+field('life','生命','number',item.life)+field('speed','速度','number',item.speed)+field('spirit','精神','number',item.spirit)+field('heal','恢复生命','number',item.heal)+area('effect','效果',item.effect);
+    else if(type==='killmoves') inner=field('name','名称','text',item.name)+select('rank','等级',ranks,item.rank)+select('path','流派',paths,item.path)+select('effectAttr','杀招单独属性',Object.keys(attrCN),item.effectAttr||'attack')+field('image','图标路径','text',item.image)+field('price','价格','number',item.price)+field('range','距离','text',item.range)+field('cooldown','冷却时间/秒','text',item.cooldown)+field('duration','持续时间','text',item.duration)+guMulti(item.guIds||[],true)+area('effect','效果描述',item.effect);
+    else if(type==='guhouses') inner=field('name','名称','text',item.name)+select('rank','等级',ranks,item.rank)+select('path','流派',paths,item.path)+field('image','图标路径','text',item.image)+field('price','价格','number',item.price)+field('range','距离','text',item.range)+field('cooldown','冷却时间/秒','text',item.cooldown)+field('duration','持续时间','text',item.duration)+guMulti(item.guIds||[],true)+area('effect','效果描述',item.effect);
+    else if(type==='recipes') inner=field('name','蛊方名','text',item.name)+field('target','炼制目标','text',item.target)+field('price','价格','number',item.price)+guMulti(item.guIds||[],true)+(typeof materialMulti==='function'?materialMulti(item.materialIds||[],true):area('materials','材料',item.materials))+area('materials','额外材料/炼制步骤文字',item.materials)+area('note','备注',item.note);
+    else if(type==='materials') inner=field('name','蛊材名','text',item.name)+field('rank','品级','text',item.rank)+field('image','图片路径','text',item.image)+field('price','价格','number',item.price)+area('effect','说明',item.effect);
+    else return oldEditItem(type,id);
+    html+=`<form id="editForm" class="form"><div class="row">${inner}</div><div class="toolbar"><button>提交审核</button></div><p class="muted">提交后进入审核阁；管理员批准前不会生效，也不会改变正式数据。</p></form>`;
+    openModal(html);
+    $('editForm').onsubmit=async e=>{
+      e.preventDefault(); const fd=new FormData(e.target); const data=Object.fromEntries(fd.entries());
+      if(type==='killmoves'||type==='guhouses'||type==='recipes') data.guIds=[...e.target.querySelectorAll('input[name="guIds"]:checked')].map(o=>o.value);
+      if(type==='recipes') data.materialIds=[...e.target.querySelectorAll('input[name="materialIds"]:checked')].map(o=>o.value);
+      ['price','attack','defense','life','speed','spirit','absorbCost','useCost','heal'].forEach(k=>{if(k in data)data[k]=Number(data[k]||0)});
+      data.creator=accountId; data.status='pending'; data.reviewType=id?'edit':'create'; if(id)data.basedOn=id;
+      await addDoc(col(type),{...data,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
+      closeModal(); toast('已提交审核，批准前不会生效');
+    };
+  };
+  window.editItem=editItem;
+
+  // 审核阁：批准“修改申请”时覆盖原数据，批准“创建申请”时转为正式；驳回直接删除申请。
+  renderReview = function(){
+    if(!isAdmin()){$('content').innerHTML='<div class="card">只有管理员可进入审核阁。</div>'; return}
+    const all=['guworms','killmoves','guhouses','recipes','materials'].flatMap(t=>(state[t]||[]).filter(x=>x.status==='pending').map(x=>({type:t,...x})));
+    $('content').innerHTML=`<div class="scroll-panel"><h2>审核阁</h2><p>玩家创建与修改必须审核；审核通过前不影响正式数据。</p></div><div class="grid">${all.map(x=>`<div class="card"><h3>${safe(x.name||x.target||'未命名')}</h3><span class="pill">${typeCN[x.type]}</span><span class="pill">${x.reviewType==='edit'?'修改申请':'创建申请'}</span><p>申请人：${safe(x.creator||'-')}</p><p>${safe(x.effect||x.note||x.materials||'')}</p><div class="toolbar"><button onclick="window.reviewV102('${x.type}','${x.id}','approved')">批准</button><button class="danger" onclick="window.reviewV102('${x.type}','${x.id}','rejected')">驳回</button><button onclick="detail('${x.type}','${x.id}')">查看</button></div></div>`).join('')||empty()}</div>`;
+  };
+  window.reviewV102=async function(t,id,status){
+    if(!isAdmin())return; const item=getItem(t,id); if(!item)return;
+    if(status==='rejected'){
+      await deleteDoc(ref(t,id)); toast('已驳回并删除申请'); return;
+    }
+    const data=cloneClean(item); delete data.status; delete data.reviewType;
+    if(item.reviewType==='edit' && item.basedOn){ const target=item.basedOn; delete data.basedOn; await setDoc(ref(t,target),{...data,status:'approved',updatedAt:serverTimestamp()},{merge:true}); await deleteDoc(ref(t,id)); toast('修改已批准并覆盖正式数据'); }
+    else { delete data.basedOn; await setDoc(ref(t,id),{...data,status:'approved',updatedAt:serverTimestamp()},{merge:true}); toast('创建已批准'); }
+  };
+  window.review=window.reviewV102;
+
+  // 管理员人物详情增加处罚与通缉入口。
+  const oldUserDetail = userDetail;
+  userDetail = function(id){
+    const p=state.users.find(x=>x.id===id); if(!p)return;
+    const a=computedAttrs(p); const criminal=isCriminal(id);
+    const absorbedGu=Object.keys(p.absorbed?.guworms||{}).map(gid=>itemName('guworms',gid)).join('、')||'暂无';
+    openModal(`${modalHead(p.name||id)}<table class="detail-table"><tr><th>玩家ID</th><td>${safe(p.id)}</td></tr><tr><th>状态</th><td>${criminal?'<span class="pill danger-pill">罪犯/通缉中</span>':'正常'}</td></tr><tr><th>境界</th><td>${safe(p.realm)}</td></tr><tr><th>资质</th><td>${safe(p.aptitude)}</td></tr><tr><th>主流派</th><td>${safe(p.mainPath)} · ${safe(p.mainAttain||'无')}</td></tr><tr><th>副流派</th><td>${safe(p.subPath)} · ${safe(p.subAttain||'无')}</td></tr><tr><th>五维</th><td>生命${a.life} 攻击${a.attack} 防御${a.defense} 速度${a.speed} 精神${a.spirit}</td></tr><tr><th>元石</th><td>${n(p.stones)}</td></tr><tr><th>真元</th><td>${n(p.essence)}/${maxEssence(p)}</td></tr><tr><th>击杀</th><td>${n(p.kills)}</td></tr><tr><th>本命蛊</th><td>${safe(p.bornGu?itemName('guworms',p.bornGu):'未定')}</td></tr><tr><th>已吸收蛊虫</th><td>${safe(absorbedGu)}</td></tr></table>${isAdmin()?`<div class="toolbar"><button onclick="window.adminEditUser('${safe(id)}')">管理员编辑</button><button onclick="window.openPunishPanel('${safe(id)}')">处罚/通缉</button></div>`:''}`);
+  };
+  window.userDetail=userDetail;
+
+  window.openPunishPanel=function(id){
+    if(!isAdmin())return; const p=playerById(id); if(!p)return;
+    openModal(`${modalHead('天机阁 · 处罚与通缉')}<div class="form"><h3>${safe(p.name||id)}</h3><div class="toolbar"><button id="mute1">禁言1小时</button><button id="mute24">禁言24小时</button><button id="death30">死亡30秒</button><button id="death300">死亡5分钟</button><button id="freezeTrade">冻结交易</button><button id="unfreezeTrade">解除冻结</button></div><h3>列为罪犯/发布悬赏</h3><label>罪名/简介<textarea id="crimeDesc" rows="3" placeholder="写明罪名、原因、通缉说明"></textarea></label><label>悬赏等级<select id="wantedLevel"><option>白榜</option><option>黄榜</option><option>玄榜</option><option>地榜</option><option>天榜</option></select></label><label>奖励元石<input id="rewardStones" type="number" value="500"></label><label>奖励物品说明<input id="rewardText" placeholder="例如：血狼蛊×1、修罗血晶×2、蛊方×1"></label><div class="toolbar"><button id="markCriminal">列为罪犯并发布悬赏</button><button id="clearCriminal">解除该玩家所有悬赏</button></div></div>`);
+    $('mute1').onclick=()=>punishUser(id,{mutedUntil:Date.now()+3600*1000},'禁言1小时');
+    $('mute24').onclick=()=>punishUser(id,{mutedUntil:Date.now()+24*3600*1000},'禁言24小时');
+    $('death30').onclick=()=>punishUser(id,{deadUntil:Date.now()+30*1000,hp:0},'死亡30秒');
+    $('death300').onclick=()=>punishUser(id,{deadUntil:Date.now()+5*60*1000,hp:0},'死亡5分钟');
+    $('freezeTrade').onclick=()=>punishUser(id,{tradeFrozen:true},'冻结交易');
+    $('unfreezeTrade').onclick=()=>punishUser(id,{tradeFrozen:false},'解除交易冻结');
+    $('markCriminal').onclick=async()=>{ const desc=$('crimeDesc').value.trim(); const level=$('wantedLevel').value; const rewardStones=n($('rewardStones').value); const rewardText=$('rewardText').value.trim(); await addDoc(col('bounties'),{target:id,targetName:p.name||id,level,desc,rewardStones,rewardText,status:'active',createdBy:accountId,createdAt:serverTimestamp()}); await setDoc(ref('users',id),{criminal:true,criminalUntil:0,updatedAt:serverTimestamp()},{merge:true}); closeModal(); toast('已发布通缉令'); };
+    $('clearCriminal').onclick=async()=>{ for(const b of (state.bounties||[]).filter(x=>x.target===id&&x.status==='active')) await setDoc(ref('bounties',b.id),{status:'cleared',updatedAt:serverTimestamp()},{merge:true}); await setDoc(ref('users',id),{criminal:false,updatedAt:serverTimestamp()},{merge:true}); closeModal(); toast('已解除通缉'); };
+  };
+  async function punishUser(id,patch,label){ await setDoc(ref('users',id),{...patch,updatedAt:serverTimestamp()},{merge:true}); await addDoc(col('moderationLogs'),{target:id,action:label,admin:accountId,createdAt:serverTimestamp()}); toast(label+'已执行'); }
+
+  function renderBounties(q=''){
+    if(!requireLogin())return;
+    const active=filter((state.bounties||[]).filter(b=>b.status==='active'),q);
+    $('content').innerHTML=`<div class="scroll-panel bounty-head"><h2>赏金堂</h2><p>被天机阁列为罪犯者不可拒绝赏金挑战；猎人击败罪犯后领取悬赏。</p></div><div class="grid">${active.map(b=>`<div class="card bounty-card"><h3>${safe(b.level||'白榜')} · ${safe(b.targetName||b.target)}</h3><span class="pill danger-pill">通缉中</span><p>${safe(b.desc||'无简介')}</p><p><b>悬赏：</b>${safe(rewardSummary(b))}</p><p class="muted">发布者：${safe(b.createdBy||'-')}</p><div class="toolbar"><button onclick="window.acceptBounty('${b.id}')">接受悬赏</button><button onclick="window.forceBountyDuel('${b.id}')">强制挑战</button>${isAdmin()?`<button class="danger" onclick="window.closeBounty('${b.id}')">关闭悬赏</button>`:''}</div></div>`).join('')||empty()}</div>`;
+  }
+  window.acceptBounty=async function(id){ const b=(state.bounties||[]).find(x=>x.id===id); if(!b)return; await setDoc(ref('bounties',id),{hunters:{...(b.hunters||{}),[accountId]:true},updatedAt:serverTimestamp()},{merge:true}); toast('已接受悬赏，可强制挑战罪犯'); };
+  window.closeBounty=async function(id){ if(!isAdmin())return; await setDoc(ref('bounties',id),{status:'closed',updatedAt:serverTimestamp()},{merge:true}); toast('悬赏已关闭'); };
+  window.forceBountyDuel=async function(id){
+    if(!requireLogin())return; const b=(state.bounties||[]).find(x=>x.id===id&&x.status==='active'); if(!b)return toast('悬赏不存在');
+    if(b.target===accountId)return toast('不能挑战自己');
+    const a=playerById(accountId), target=playerById(b.target); if(!a||!target)return toast('目标不存在');
+    const pair=(typeof v91PairKey==='function')?v91PairKey(accountId,b.target):[accountId,b.target].sort().join('__');
+    const roomId='bounty_'+id+'_'+Date.now(); const hp={}; hp[accountId]=(typeof v91MaxHp==='function')?v91MaxHp(a):computedAttrs(a).life; hp[b.target]=(typeof v91MaxHp==='function')?v91MaxHp(target):computedAttrs(target).life;
+    await setDoc(ref('duelRooms',roomId),{players:[accountId,b.target],pair,status:'active',forced:true,bountyId:id,hp,maxHp:{...hp},startAtMs:Date.now()+5000,logs:[`赏金挑战开启：${a.name||accountId} 强制挑战通缉犯 ${target.name||b.target}`,'五息倒计时后开战。'],createdAt:serverTimestamp(),updatedAt:serverTimestamp()},{merge:true});
+    await setDoc(ref('bounties',id),{lastRoom:roomId,lastHunter:accountId,updatedAt:serverTimestamp()},{merge:true});
+    if(typeof window.enterDuelRoom==='function') window.enterDuelRoom(roomId); else {current='arena'; render();}
+  };
+
+  // 斗蛊胜利后检查赏金完成并发放奖励。
+  if(window.duelUse){
+    const oldDuelUse=window.duelUse;
+    window.duelUse=async function(roomId,type,id,slot){
+      await oldDuelUse(roomId,type,id,slot);
+      try{
+        const d=await getDoc(ref('duelRooms',roomId)); if(!d.exists())return;
+        const r={id:roomId,...d.data()}; if(r.status!=='finished'||!r.bountyId||r.bountyPaid)return;
+        const bDoc=await getDoc(ref('bounties',r.bountyId)); if(!bDoc.exists())return; const b={id:r.bountyId,...bDoc.data()};
+        if(r.winner && r.winner!==b.target){
+          const winner=playerById(r.winner)||{}; const inv=winner.inventory||{guworms:{},killmoves:{},guhouses:{},recipes:{},materials:{}};
+          await setDoc(ref('users',r.winner),{...winner,stones:n(winner.stones)+n(b.rewardStones),inventory:inv,kills:n(winner.kills)+1,updatedAt:serverTimestamp()},{merge:true});
+          await setDoc(ref('bounties',b.id),{status:'completed',winner:r.winner,completedAt:serverTimestamp()},{merge:true});
+          await setDoc(ref('duelRooms',roomId),{bountyPaid:true,updatedAt:serverTimestamp()},{merge:true});
+          toast(`悬赏完成，获得元石×${n(b.rewardStones)}`);
+        }
+      }catch(e){console.warn('bounty settle failed',e)}
+    };
+  }
+
+  // 简单禁止被冻结玩家发起交易。
+  if(window.newTrade){ const oldNewTrade=window.newTrade; window.newTrade=function(){ if(me?.tradeFrozen)return toast('你已被冻结交易'); return oldNewTrade(); }; }
+
+  try{ initNav(); render(); }catch(e){console.warn('v10.2 init failed',e)}
+})();
