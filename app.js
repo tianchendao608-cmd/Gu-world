@@ -2348,224 +2348,50 @@ try{ if(current==='arena'||current==='adventure')render(); renderVitals(); }catc
   try{ initNav(); render(); }catch(e){ console.warn('V8.5 init failed',e); }
 })();
 
-/* ===================== V10.3 手机战场重制 / 底栏收纳 / 地图缩放 / 妖兽视觉优化 ===================== */
+/* ===================== V10.3.4 手机版布局：左侧抽屉 + 底部真元生命条 ===================== */
 (function(){
-  const V103 = {
-    zoom: 1,
-    keys: {},
-    lastMove: 0,
-    moveTimer: null,
-    inited: false,
-    themes: {
-      blood_wolf_woods:{bg:'radial-gradient(circle at 20% 20%, rgba(120,0,0,.35), transparent 28%), radial-gradient(circle at 80% 70%, rgba(20,0,0,.75), transparent 38%), linear-gradient(135deg,#170808,#3a1111 45%,#080403)', glyph:'🐺', aura:'血雾', color:'#d33'},
-      bone_graveyard:{bg:'radial-gradient(circle at 20% 70%, rgba(230,220,190,.18), transparent 30%), linear-gradient(135deg,#0d0d10,#29241d 50%,#050505)', glyph:'☠', aura:'骨火', color:'#e8d7a8'},
-      black_wind_gorge:{bg:'radial-gradient(circle at 50% 20%, rgba(120,120,160,.22), transparent 35%), linear-gradient(135deg,#05070a,#17202b 55%,#020304)', glyph:'🜃', aura:'黑风', color:'#9cc7ff'},
-      ghost_swamp:{bg:'radial-gradient(circle at 70% 30%, rgba(40,180,120,.22), transparent 35%), linear-gradient(135deg,#061512,#1b2d24 55%,#020806)', glyph:'👁', aura:'毒雾', color:'#60e0a8'},
-      gu_abyss:{bg:'radial-gradient(circle at 50% 50%, rgba(140,0,180,.25), transparent 35%), linear-gradient(135deg,#08020d,#1a071f 50%,#050007)', glyph:'◎', aura:'虫鸣', color:'#d56bff'}
-    }
-  };
-  window.V103 = V103;
+  function ensureMobileLayout(){
+    if(document.getElementById('mobileMenuBtn')) return;
+    const btn=document.createElement('button');
+    btn.id='mobileMenuBtn';
+    btn.type='button';
+    btn.innerHTML='☰';
+    btn.setAttribute('aria-label','打开菜单');
+    btn.onclick=()=>document.body.classList.toggle('mobile-menu-open');
+    document.body.appendChild(btn);
 
-  function ready(fn){ if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',fn); else fn(); }
-  function qs(s){ return document.querySelector(s); }
-  function qsa(s){ return Array.from(document.querySelectorAll(s)); }
-  function inCombat(){ return !!qs('.v85-stage,.duel-map,.duel-page,.v85-duel,.battlefield,.arena-stage'); }
-  function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
-  function speedMeter(){
-    try{
-      const a = typeof computedAttrs==='function' ? computedAttrs(me) : {speed:5};
-      const s = Math.max(5, Number(a.speed||5));
-      return Math.max(.7, Math.min(8, s/5));
-    }catch(e){return 1;}
-  }
-  function applyCombatClass(){
-    const on = inCombat();
-    document.body.classList.toggle('v103-combat-mode', on);
-    const box = qs('#vitalsDock');
-    if(box && !box.querySelector('.v103-mobile-toggle')){
-      const btn=document.createElement('button');
-      btn.className='v103-mobile-toggle';
-      btn.textContent='技能栏';
-      btn.onclick=()=>box.classList.toggle('v103-open');
-      box.insertBefore(btn, box.querySelector('.equip-mini') || box.firstChild);
-    }
-  }
-  function decorateMaps(){
-    qsa('.v85-stage,.duel-map,.battlefield,.arena-stage').forEach(map=>{
-      if(map.dataset.v103) return; map.dataset.v103='1';
-      map.classList.add('v103-map');
-      const theme = Array.from(map.classList).find(c=>c.startsWith('theme-'))?.replace('theme-','') || 'gu_abyss';
-      const t=V103.themes[theme] || V103.themes.gu_abyss;
-      map.style.background = t.bg;
-      const fog=document.createElement('div'); fog.className='v103-fog-layer'; map.prepend(fog);
-      const label=document.createElement('div'); label.className='v103-map-label'; label.textContent=`${t.glyph} ${t.aura} · 50×50米`; map.appendChild(label);
-    });
-    qsa('.v85-token.beast,.enemy-token').forEach((b,i)=>{
-      if(b.dataset.v103) return; b.dataset.v103='1';
-      b.classList.add('v103-beast-token');
-      const halo=document.createElement('i'); halo.className='v103-halo'; b.appendChild(halo);
-      b.title = b.title || '妖兽：会移动、追击、普攻与释放蛊虫';
-    });
-    qsa('.v85-token.hero').forEach(h=>{ h.classList.add('v103-hero-token'); });
-  }
-  function setZoom(z){
-    V103.zoom = clamp(z, .7, 2.8);
-    qsa('.v85-stage,.duel-map,.battlefield,.arena-stage').forEach(m=>{
-      m.style.setProperty('--v103-zoom', V103.zoom);
-      m.classList.add('v103-zoomed');
-    });
-    const v=qs('.v103-zoom-value'); if(v) v.textContent=Math.round(V103.zoom*100)+'%';
-  }
-  window.v103ZoomIn=()=>setZoom(V103.zoom+.15);
-  window.v103ZoomOut=()=>setZoom(V103.zoom-.15);
-  window.v103ZoomReset=()=>setZoom(1);
-  function addZoomButtons(){
-    qsa('.v85-stage,.duel-map,.battlefield,.arena-stage').forEach(m=>{
-      if(m.querySelector('.v103-zoom-tools')) return;
-      const tools=document.createElement('div');
-      tools.className='v103-zoom-tools';
-      tools.innerHTML='<button onclick="window.v103ZoomOut()">－</button><span class="v103-zoom-value">100%</span><button onclick="window.v103ZoomIn()">＋</button><button onclick="window.v103ZoomReset()">归位</button>';
-      m.appendChild(tools);
-    });
-  }
-  function tryMove(dx,dy){
-    const mag=speedMeter();
-    try{
-      if(window.V85 && window.V85.adv && typeof window.v85AdvMove==='function'){ window.v85AdvMove(dx*mag,dy*mag); return true; }
-    }catch(e){}
-    try{
-      const roomId = window.v91CurrentRoom || window.currentDuelRoom || window.duelRoomId;
-      if(roomId && typeof window.v85DuelMove==='function'){ window.v85DuelMove(roomId,dx*mag,dy*mag); return true; }
-    }catch(e){}
-    return false;
-  }
-  function startMoveLoop(){
-    if(V103.moveTimer) return;
-    V103.moveTimer=setInterval(()=>{
-      const tag=(document.activeElement?.tagName||'').toLowerCase();
-      if(['input','textarea','select'].includes(tag)) return;
-      let dx=0,dy=0;
-      if(V103.keys.w||V103.keys.arrowup) dy-=1;
-      if(V103.keys.s||V103.keys.arrowdown) dy+=1;
-      if(V103.keys.a||V103.keys.arrowleft) dx-=1;
-      if(V103.keys.d||V103.keys.arrowright) dx+=1;
-      if(dx||dy){ const len=Math.hypot(dx,dy)||1; tryMove(dx/len,dy/len); }
-    },80);
-  }
-  function installKeys(){
-    document.addEventListener('keydown',e=>{ const k=e.key.toLowerCase(); if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(k)){ V103.keys[k]=true; startMoveLoop(); if(inCombat()) e.preventDefault(); } });
-    document.addEventListener('keyup',e=>{ const k=e.key.toLowerCase(); if(k in V103.keys) V103.keys[k]=false; });
-  }
-  function addMobilePad(){
-    if(!inCombat()) return;
-    let pad=qs('.v103-mobile-pad');
-    if(!pad){
-      pad=document.createElement('div'); pad.className='v103-mobile-pad';
-      pad.innerHTML='<button data-d="0,-1">↑</button><button data-d="-1,0">←</button><button data-d="1,0">→</button><button data-d="0,1">↓</button>';
-      document.body.appendChild(pad);
-      pad.querySelectorAll('button').forEach(btn=>{
-        let timer=null; const [dx,dy]=btn.dataset.d.split(',').map(Number);
-        const down=(ev)=>{ev.preventDefault(); timer=setInterval(()=>tryMove(dx,dy),90); tryMove(dx,dy);};
-        const up=()=>{ if(timer) clearInterval(timer); timer=null; };
-        btn.addEventListener('touchstart',down,{passive:false}); btn.addEventListener('mousedown',down);
-        ['touchend','touchcancel','mouseup','mouseleave'].forEach(x=>btn.addEventListener(x,up));
-      });
-    }
-  }
-  function removeMobilePad(){ if(!inCombat()) qs('.v103-mobile-pad')?.remove(); }
+    const mask=document.createElement('div');
+    mask.id='mobileMenuMask';
+    mask.onclick=()=>document.body.classList.remove('mobile-menu-open');
+    document.body.appendChild(mask);
 
-  function patchVitals(){
-    if(typeof renderVitals!=='function' || renderVitals.v103) return;
-    const old=renderVitals;
+    document.addEventListener('click',e=>{
+      const nav=e.target.closest && e.target.closest('.nav-btn');
+      if(nav && window.innerWidth<=860) document.body.classList.remove('mobile-menu-open');
+    });
+  }
+
+  function patchVitalsDock(){
+    const box=document.getElementById('vitalsDock');
+    if(!box || box.dataset.mobilePatched==='1') return;
+    box.dataset.mobilePatched='1';
+    const row=document.createElement('div');
+    row.className='mobile-vital-actions';
+    const openBtn=document.createElement('button');
+    openBtn.type='button';
+    openBtn.textContent='技能栏';
+    openBtn.onclick=()=>box.classList.toggle('mobile-skill-open');
+    row.appendChild(openBtn);
+    box.appendChild(row);
+  }
+
+  const oldRenderVitals = typeof renderVitals==='function' ? renderVitals : null;
+  if(oldRenderVitals){
     renderVitals=function(){
-      old();
-      const box=qs('#vitalsDock'); if(!box) return;
-      const speed=document.createElement('div');
-      speed.className='v103-speed-line';
-      speed.textContent='速度：'+(typeof computedAttrs==='function'&&me?computedAttrs(me).speed:5)+' ｜ 战场速度 '+speedMeter().toFixed(1)+'米/秒';
-      if(!box.querySelector('.v103-speed-line')) box.appendChild(speed);
-      else box.querySelector('.v103-speed-line').textContent=speed.textContent;
-      applyCombatClass();
+      oldRenderVitals();
+      patchVitalsDock();
     };
-    renderVitals.v103=true;
   }
-
-  function patchAdventureCards(){
-    if(typeof renderAdventure!=='function' || renderAdventure.v103) return;
-    const old=renderAdventure;
-    renderAdventure=function(){
-      old();
-      qsa('.adventure-card,.v85-area-card').forEach((c,i)=>{
-        c.classList.add('v103-area-card');
-        if(!c.querySelector('.v103-beast-art')){
-          const arts=['🐺 噬血狼 · 骨刺赤眸','☠ 白骨将 · 断刃残甲','🜃 裂风豹 · 黑鸦盘空','👁 鬼面蛛 · 毒雾沼泽','◎ 深渊母虫 · 万蛊虫潮'];
-          const d=document.createElement('div'); d.className='v103-beast-art'; d.textContent=arts[i%arts.length]; c.prepend(d);
-        }
-      });
-    };
-    renderAdventure.v103=true;
-  }
-
-  function tick(){
-    patchVitals(); patchAdventureCards(); applyCombatClass(); decorateMaps(); addZoomButtons(); addMobilePad(); removeMobilePad();
-  }
-  ready(()=>{
-    if(V103.inited) return; V103.inited=true; installKeys();
-    setInterval(tick,600); setTimeout(tick,300); setTimeout(tick,1200);
-    try{ if(typeof initNav==='function') initNav(); if(typeof render==='function') render(); }catch(e){console.warn('V10.3 init soft fail',e)}
-  });
-})();
-
-/* ===================== V10.3.1 手机战场界面修复：不挡屏、战场全屏、底栏收纳 ===================== */
-(function(){
-  const qs=(s)=>document.querySelector(s);
-  const qsa=(s)=>Array.from(document.querySelectorAll(s));
-  const combatSel='.battle-layout,.v85-battle,.v85-duel,.duel-page,.adventure-fight,.battlefield-wrap,.v103-map';
-  function isCombat(){ return !!qs(combatSel); }
-  function apply(){
-    const on=isCombat();
-    document.body.classList.toggle('v1031-combat', on);
-    const box=qs('#vitalsDock');
-    if(box){
-      if(!box.querySelector('.v1031-toggle')){
-        const btn=document.createElement('button');
-        btn.className='v1031-toggle';
-        btn.textContent='技能栏';
-        btn.onclick=()=>box.classList.toggle('v1031-open');
-        const mini=box.querySelector('.equip-mini');
-        box.insertBefore(btn, mini||null);
-      }
-      if(on && !box.classList.contains('v1031-ready')){
-        box.classList.add('v1031-ready');
-        if(window.innerWidth<900) box.classList.remove('v1031-open');
-      }
-      if(!on){ box.classList.remove('v1031-ready'); }
-    }
-    qsa('.battlefield-wrap,.v85-stage,.duel-map,.battlefield,.arena-stage').forEach(map=>{
-      map.classList.add('v1031-map-polish');
-      if(!map.querySelector('.v1031-corner')){
-        const c=document.createElement('div'); c.className='v1031-corner'; c.textContent='50×50米 · 可缩放战场'; map.appendChild(c);
-      }
-    });
-    qsa('.adventure-grid .card,.v85-adventure-grid .card').forEach((card,i)=>{
-      card.classList.add('v1031-area-card');
-      if(!card.querySelector('.v1031-area-mark')){
-        const marks=['血雾狼影','枯骨阴火','黑风裂谷','幽魂毒沼','万蛊深渊','青苔鬼林','石牙滩','赤狐丘'];
-        const d=document.createElement('div'); d.className='v1031-area-mark'; d.textContent=marks[i%marks.length]; card.prepend(d);
-      }
-    });
-  }
-  const oldRender=window.render;
-  if(typeof oldRender==='function' && !oldRender.v1031){
-    window.render=function(){ const r=oldRender.apply(this,arguments); setTimeout(apply,30); return r; };
-    window.render.v1031=true;
-  }
-  const oldVitals=window.renderVitals;
-  if(typeof oldVitals==='function' && !oldVitals.v1031){
-    window.renderVitals=function(){ const r=oldVitals.apply(this,arguments); setTimeout(apply,20); return r; };
-    window.renderVitals.v1031=true;
-  }
-  setInterval(apply,700);
-  window.addEventListener('resize',apply);
-  document.addEventListener('DOMContentLoaded',apply);
+  window.addEventListener('load',()=>{ ensureMobileLayout(); patchVitalsDock(); });
+  setInterval(()=>{ ensureMobileLayout(); patchVitalsDock(); },1200);
 })();
