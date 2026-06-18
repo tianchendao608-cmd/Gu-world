@@ -103,3 +103,7 @@
 .duel-skills .duel-skill{border-radius:14px;transform:scale(.96)}.battle-log{max-height:260px;overflow:auto}
 @keyframes targetPulse{0%{filter:brightness(1)}50%{filter:brightness(1.35)}100%{filter:brightness(1)}}
 @media(max-width:860px){.v101-help{font-size:12px}.v101-pad{position:fixed;right:10px;left:auto;bottom:145px;background:rgba(23,18,13,.85);padding:8px;border-radius:14px;border:1px solid #d9b45f}.battlefield-wrap{max-height:62vh}.battle-token span{font-size:9px}}
+
+
+/* V10.2 审核阁与赏金堂 */
+.danger-pill{background:#8f1d1d!important;color:#fff!important;border-color:#8f1d1d!important}.bounty-head{border-color:rgba(143,29,29,.35);box-shadow:0 0 0 2px rgba(143,29,29,.08),var(--shadow)}.bounty-card{background:linear-gradient(180deg,rgba(255,248,232,.96),rgba(238,213,171,.96));border-color:rgba(143,29,29,.28)}.bounty-card h3{color:#8f1d1d}.review-badge{display:inline-block;padding:3px 8px;border-radius:999px;background:#ead8ad;border:1px solid var(--line);font-size:12px}.form textarea{resize:vertical}.toolbar button.danger,.danger{background:#8f1d1d;color:#fff;border-color:#8f1d1d}@media(max-width:860px){.bounty-card .toolbar{display:grid;grid-template-columns:1fr}.bounty-card .toolbar button{width:100%}}
