@@ -2515,3 +2515,57 @@ try{ if(current==='arena'||current==='adventure')render(); renderVitals(); }catc
     try{ if(typeof initNav==='function') initNav(); if(typeof render==='function') render(); }catch(e){console.warn('V10.3 init soft fail',e)}
   });
 })();
+
+/* ===================== V10.3.1 手机战场界面修复：不挡屏、战场全屏、底栏收纳 ===================== */
+(function(){
+  const qs=(s)=>document.querySelector(s);
+  const qsa=(s)=>Array.from(document.querySelectorAll(s));
+  const combatSel='.battle-layout,.v85-battle,.v85-duel,.duel-page,.adventure-fight,.battlefield-wrap,.v103-map';
+  function isCombat(){ return !!qs(combatSel); }
+  function apply(){
+    const on=isCombat();
+    document.body.classList.toggle('v1031-combat', on);
+    const box=qs('#vitalsDock');
+    if(box){
+      if(!box.querySelector('.v1031-toggle')){
+        const btn=document.createElement('button');
+        btn.className='v1031-toggle';
+        btn.textContent='技能栏';
+        btn.onclick=()=>box.classList.toggle('v1031-open');
+        const mini=box.querySelector('.equip-mini');
+        box.insertBefore(btn, mini||null);
+      }
+      if(on && !box.classList.contains('v1031-ready')){
+        box.classList.add('v1031-ready');
+        if(window.innerWidth<900) box.classList.remove('v1031-open');
+      }
+      if(!on){ box.classList.remove('v1031-ready'); }
+    }
+    qsa('.battlefield-wrap,.v85-stage,.duel-map,.battlefield,.arena-stage').forEach(map=>{
+      map.classList.add('v1031-map-polish');
+      if(!map.querySelector('.v1031-corner')){
+        const c=document.createElement('div'); c.className='v1031-corner'; c.textContent='50×50米 · 可缩放战场'; map.appendChild(c);
+      }
+    });
+    qsa('.adventure-grid .card,.v85-adventure-grid .card').forEach((card,i)=>{
+      card.classList.add('v1031-area-card');
+      if(!card.querySelector('.v1031-area-mark')){
+        const marks=['血雾狼影','枯骨阴火','黑风裂谷','幽魂毒沼','万蛊深渊','青苔鬼林','石牙滩','赤狐丘'];
+        const d=document.createElement('div'); d.className='v1031-area-mark'; d.textContent=marks[i%marks.length]; card.prepend(d);
+      }
+    });
+  }
+  const oldRender=window.render;
+  if(typeof oldRender==='function' && !oldRender.v1031){
+    window.render=function(){ const r=oldRender.apply(this,arguments); setTimeout(apply,30); return r; };
+    window.render.v1031=true;
+  }
+  const oldVitals=window.renderVitals;
+  if(typeof oldVitals==='function' && !oldVitals.v1031){
+    window.renderVitals=function(){ const r=oldVitals.apply(this,arguments); setTimeout(apply,20); return r; };
+    window.renderVitals.v1031=true;
+  }
+  setInterval(apply,700);
+  window.addEventListener('resize',apply);
+  document.addEventListener('DOMContentLoaded',apply);
+})();

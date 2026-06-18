@@ -3,3 +3,69 @@
 
 /* ===================== V10.3 手机战场重制样式 ===================== */
 .v103-combat-mode .sidebar{display:none!important}.v103-combat-mode .app-shell{display:block!important}.v103-combat-mode .main{padding:8px!important}.v103-combat-mode .topbar{display:none!important}.v103-combat-mode #content{padding-bottom:230px}.v103-map{position:relative!important;overflow:hidden!important;min-height:68vh!important;border:2px solid rgba(217,180,95,.75)!important;box-shadow:inset 0 0 80px rgba(0,0,0,.75),0 18px 80px rgba(0,0,0,.45)!important;touch-action:none}.v103-map:before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.06) 1px,transparent 1px);background-size:4% 4%;opacity:.35;pointer-events:none}.v103-fog-layer{position:absolute;inset:-20%;background:radial-gradient(circle at 20% 30%,rgba(255,255,255,.12),transparent 24%),radial-gradient(circle at 80% 70%,rgba(130,0,0,.18),transparent 30%);animation:v103Fog 10s infinite alternate ease-in-out;pointer-events:none}.v103-map-label{position:absolute;left:12px;top:12px;padding:6px 10px;border:1px solid rgba(217,180,95,.6);border-radius:999px;background:rgba(12,8,4,.72);color:#ffe7a6;font-size:12px;z-index:4}.v103-token,.v85-token{transition:left .12s linear,top .12s linear,transform .16s ease!important}.v103-hero-token{background:radial-gradient(circle,#fff4ba,#c58a22)!important;color:#1a1108!important;border:2px solid #fff0af!important;box-shadow:0 0 18px #ffd66c!important}.v103-beast-token{background:radial-gradient(circle,#ff5960,#6b0303)!important;color:#fff!important;border:2px solid #ffb2b2!important;box-shadow:0 0 22px rgba(255,0,0,.65)!important;animation:v103Pulse 1.4s infinite}.v103-beast-token.sel,.v85-token.sel{outline:3px solid #ff3232!important;box-shadow:0 0 0 8px rgba(255,0,0,.18),0 0 28px #ff1c1c!important}.v103-halo{position:absolute;inset:-10px;border:1px solid rgba(255,0,0,.45);border-radius:50%;animation:v103Halo 1.2s infinite;pointer-events:none}.v103-zoom-tools{position:absolute;right:10px;top:10px;z-index:8;display:flex;gap:5px;align-items:center;background:rgba(12,8,4,.72);padding:5px;border-radius:12px;border:1px solid rgba(217,180,95,.55)}.v103-zoom-tools button{padding:5px 8px;font-size:12px}.v103-zoom-value{color:#ffe7a6;font-size:12px;min-width:42px;text-align:center}.v103-mobile-pad{position:fixed;left:10px;bottom:72px;z-index:2000;display:grid;grid-template-columns:48px 48px 48px;grid-template-areas:". up ." "left down right";gap:5px}.v103-mobile-pad button{width:48px;height:48px;border-radius:16px;background:rgba(255,246,205,.94);box-shadow:0 4px 16px rgba(0,0,0,.35)}.v103-mobile-pad button:nth-child(1){grid-area:up}.v103-mobile-pad button:nth-child(2){grid-area:left}.v103-mobile-pad button:nth-child(3){grid-area:right}.v103-mobile-pad button:nth-child(4){grid-area:down}.v103-speed-line{font-size:12px;color:#fbe8ac;margin-top:6px}.v103-area-card{border-color:#b98a2d!important;background:linear-gradient(180deg,rgba(255,248,220,.96),rgba(222,194,123,.9))!important}.v103-beast-art{font-weight:900;color:#651111;background:linear-gradient(90deg,#ead08a,#fff6d7);border:1px solid rgba(120,0,0,.25);border-radius:14px;padding:8px;margin-bottom:8px}.v103-collapse-note{font-size:12px}.v103-combat-mode #vitalsDock{position:fixed!important;left:0!important;right:0!important;bottom:0!important;width:100%!important;max-width:none!important;border-radius:18px 18px 0 0!important;z-index:1800!important;padding:8px 10px!important;background:rgba(20,13,7,.96)!important;border-top:2px solid #d9b45f!important;box-shadow:0 -10px 40px rgba(0,0,0,.45)!important}.v103-combat-mode #vitalsDock .vital-title{font-size:15px!important}.v103-combat-mode #vitalsDock .bar-wrap{margin:3px 0!important}.v103-combat-mode #vitalsDock .bar{height:8px!important}.v103-combat-mode #vitalsDock button{padding:6px 8px!important;font-size:12px!important}.v103-combat-mode #vitalsDock .equip-mini{display:none!important}.v103-combat-mode #vitalsDock.v103-open .equip-mini{display:grid!important;grid-template-columns:repeat(5,1fr)!important;gap:6px!important;margin-top:6px!important}.v103-mobile-toggle{float:right;background:#8f1d1d!important;color:#fff!important;border-color:#d9b45f!important}.v103-combat-mode .equip-slot.tiny{min-height:54px!important;padding:4px!important}.v103-combat-mode .equip-slot.tiny img{width:28px!important;height:28px!important}.v103-combat-mode .equip-slot.tiny span{font-size:11px!important}.v103-combat-mode .equip-slot.tiny button{padding:3px 5px!important}.v103-combat-mode .duel-vs,.v103-combat-mode .v85-vs{display:none!important}@media(max-width:860px){body.v103-combat-mode{overflow-x:hidden}.v103-combat-mode .v103-map{min-height:62vh!important;width:100%!important}.v103-combat-mode #content{padding-bottom:260px}.v103-combat-mode .card,.v103-combat-mode .scroll-panel{border-radius:18px!important;padding:14px!important}.v103-zoom-tools{right:6px;top:6px}.v103-map-label{font-size:11px;left:7px;top:7px}.v103-combat-mode .battle-log{max-height:110px;overflow:auto}.v103-combat-mode #vitalsDock:not(.v103-open) .equip-mini{display:none!important}.v103-combat-mode #vitalsDock:not(.v103-open){max-height:205px;overflow:hidden}.v103-combat-mode #vitalsDock.v103-open{max-height:52vh;overflow:auto}.v103-combat-mode .main{margin:0!important}.v103-mobile-pad{bottom:74px}}@keyframes v103Fog{from{transform:translate(-2%,-1%) scale(1)}to{transform:translate(3%,2%) scale(1.08)}}@keyframes v103Pulse{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.08)}}@keyframes v103Halo{0%{opacity:.9;transform:scale(.7)}100%{opacity:0;transform:scale(1.5)}}
+
+/* ===================== V10.3.1 手机战场修复与美化 ===================== */
+/* 非战斗页面：右下角面板缩小，不再挡住大片内容 */
+#vitalsDock{max-width:300px!important;width:min(300px,92vw)!important;right:14px!important;bottom:14px!important;padding:12px!important;border-radius:18px!important;backdrop-filter:blur(12px);}
+#vitalsDock .vital-title{font-size:17px!important;margin-bottom:6px!important;}
+#vitalsDock .bar-wrap span{font-size:13px!important;}
+#vitalsDock .bar{height:8px!important;}
+#vitalsDock button{padding:7px 10px!important;font-size:12px!important;border-radius:10px!important;}
+#vitalsDock .equip-mini{grid-template-columns:repeat(5,1fr)!important;gap:6px!important;margin-top:8px!important;}
+#vitalsDock .equip-slot.tiny{min-height:58px!important;padding:5px!important;border-radius:12px!important;}
+#vitalsDock .equip-slot.tiny img{width:30px!important;height:30px!important;}
+#vitalsDock .equip-slot.tiny span{font-size:11px!important;line-height:1.1!important;}
+
+/* 战斗模式：左栏和顶部彻底消失，战斗占满屏幕 */
+body.v1031-combat .sidebar{display:none!important;}
+body.v1031-combat .app-shell{display:block!important;min-height:100vh!important;}
+body.v1031-combat .main{padding:0!important;margin:0!important;width:100vw!important;max-width:100vw!important;}
+body.v1031-combat .topbar{display:none!important;}
+body.v1031-combat #content{padding:0 0 172px 0!important;margin:0!important;min-height:100vh!important;background:radial-gradient(circle at top,#24170d,#0e0805 70%)!important;}
+body.v1031-combat .scroll-panel,body.v1031-combat .card{box-shadow:none!important;}
+
+/* 战场地图：更像地图，而不是网页卡片 */
+.v1031-map-polish,.v103-map,.battlefield,.v85-stage,.duel-map{border-radius:0!important;border:0!important;min-height:calc(100vh - 172px)!important;background:radial-gradient(circle at 30% 25%,rgba(120,20,20,.34),transparent 20%),radial-gradient(circle at 75% 70%,rgba(20,60,70,.28),transparent 28%),linear-gradient(135deg,#14100b,#221209 45%,#090706)!important;box-shadow:inset 0 0 110px rgba(0,0,0,.88)!important;}
+.v1031-map-polish:after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(rgba(255,255,255,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.055) 1px,transparent 1px);background-size:36px 36px;opacity:.38;}
+.v1031-corner{position:absolute;left:12px;top:12px;z-index:20;padding:6px 10px;border-radius:999px;border:1px solid rgba(235,190,95,.7);background:rgba(20,10,5,.78);color:#ffe8a7;font-size:12px;letter-spacing:.04em;}
+.v103-zoom-tools{right:12px!important;top:12px!important;border-radius:14px!important;background:rgba(15,8,4,.84)!important;}
+.v103-zoom-tools button{min-width:30px!important;min-height:30px!important;}
+
+/* 玩家/NPC圆点更清楚 */
+.battle-token,.v85-token{width:34px!important;height:34px!important;border-radius:50%!important;display:grid!important;place-items:center!important;font-size:11px!important;transform:translate(-50%,-50%)!important;}
+.player-token,.v103-hero-token,.v85-token.hero{background:radial-gradient(circle,#fff7c8,#d19a28)!important;color:#160c04!important;border:2px solid #fff0aa!important;box-shadow:0 0 18px rgba(255,210,80,.9)!important;}
+.npc-token,.v103-beast-token,.v85-token.beast{background:radial-gradient(circle,#ff6767,#650404)!important;color:white!important;border:2px solid #ffc1c1!important;box-shadow:0 0 24px rgba(255,0,0,.65)!important;}
+.npc-token.targeted,.v85-token.sel{outline:3px solid #ff2a2a!important;box-shadow:0 0 0 9px rgba(255,0,0,.18),0 0 30px #ff2020!important;}
+
+/* 底部战斗栏：默认只显示生命真元+按钮，技能收纳，不挡屏 */
+body.v1031-combat #vitalsDock{position:fixed!important;left:0!important;right:0!important;bottom:0!important;width:100vw!important;max-width:100vw!important;border-radius:18px 18px 0 0!important;padding:8px 10px!important;background:rgba(18,10,5,.96)!important;border:1px solid rgba(217,180,95,.8)!important;border-bottom:0!important;z-index:5000!important;box-shadow:0 -12px 48px rgba(0,0,0,.62)!important;display:grid!important;grid-template-columns:1fr auto auto auto!important;gap:6px 10px!important;align-items:center!important;}
+body.v1031-combat #vitalsDock .vital-title{grid-column:1/2!important;font-size:15px!important;margin:0!important;color:#fff0b6!important;}
+body.v1031-combat #vitalsDock .bar-wrap{grid-column:1/5!important;margin:1px 0!important;}
+body.v1031-combat #vitalsDock .bar-wrap span{font-size:12px!important;color:#f9eac0!important;}
+body.v1031-combat #vitalsDock .bar{height:7px!important;background:rgba(255,255,255,.12)!important;}
+body.v1031-combat #vitalsDock .stone-line{grid-column:1/3!important;font-size:13px!important;color:#ffe7a6!important;}
+body.v1031-combat #vitalsDock > button{margin:0!important;white-space:nowrap!important;}
+body.v1031-combat #vitalsDock .v1031-toggle,body.v1031-combat #vitalsDock .v103-mobile-toggle{display:inline-block!important;background:#8b1a1a!important;color:#fff!important;border-color:#d9b45f!important;}
+body.v1031-combat #vitalsDock .equip-mini{display:none!important;grid-column:1/5!important;}
+body.v1031-combat #vitalsDock.v1031-open .equip-mini,body.v1031-combat #vitalsDock.v103-open .equip-mini{display:grid!important;grid-template-columns:repeat(5,1fr)!important;gap:6px!important;max-height:110px!important;overflow:auto!important;}
+body.v1031-combat #vitalsDock .equip-slot.tiny{min-height:48px!important;padding:4px!important;background:rgba(255,235,170,.08)!important;border-color:rgba(217,180,95,.55)!important;}
+body.v1031-combat #vitalsDock .equip-slot.tiny span{font-size:10px!important;color:#f7e7c5!important;}
+body.v1031-combat #vitalsDock .equip-slot.tiny button{padding:2px 5px!important;font-size:11px!important;}
+
+/* 历练谷卡片：更精美，不再像乱堆卡片 */
+.v1031-area-card{position:relative!important;overflow:hidden!important;background:linear-gradient(160deg,rgba(255,248,224,.98),rgba(226,196,124,.93))!important;border:1px solid rgba(185,138,45,.55)!important;box-shadow:0 12px 36px rgba(55,30,10,.18)!important;}
+.v1031-area-card:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 80% 5%,rgba(120,0,0,.14),transparent 30%);pointer-events:none;}
+.v1031-area-mark{font-size:13px;font-weight:800;letter-spacing:.16em;color:#5b160c;background:linear-gradient(90deg,#ead08a,#fff6d7);border:1px solid rgba(120,0,0,.18);border-radius:12px;padding:8px 10px;margin-bottom:10px;}
+
+@media(max-width:860px){
+  body:not(.v1031-combat) #vitalsDock{left:10px!important;right:10px!important;bottom:10px!important;width:auto!important;max-width:none!important;max-height:190px!important;overflow:hidden!important;}
+  body:not(.v1031-combat) #vitalsDock .equip-mini{display:none!important;}
+  body.v1031-combat #content{padding-bottom:168px!important;}
+  body.v1031-combat #vitalsDock{grid-template-columns:1fr auto!important;padding:7px 8px!important;}
+  body.v1031-combat #vitalsDock .bar-wrap,body.v1031-combat #vitalsDock .equip-mini{grid-column:1/3!important;}
+  body.v1031-combat #vitalsDock .stone-line{grid-column:1/3!important;}
+  body.v1031-combat #vitalsDock button{font-size:11px!important;padding:6px 7px!important;}
+  .v103-mobile-pad{left:8px!important;bottom:178px!important;grid-template-columns:42px 42px 42px!important;}
+  .v103-mobile-pad button{width:42px!important;height:42px!important;border-radius:14px!important;}
+  .v1031-map-polish,.v103-map,.battlefield,.v85-stage,.duel-map{min-height:calc(100vh - 168px)!important;}
+}
